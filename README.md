@@ -1,6 +1,6 @@
 # github-repo-stats 🔎
 
-[![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://piecioshka.mit-license.org)
+[![cli-available](https://badgen.net/static/cli/available/?icon=terminal)](https://runkit.com/npm/github-repo-stats) [![node version](https://img.shields.io/node/v/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats) [![npm version](https://badge.fury.io/js/github-repo-stats.svg)](https://badge.fury.io/js/github-repo-stats) [![downloads count](https://img.shields.io/npm/dt/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats) [![size](https://packagephobia.com/badge?p=github-repo-stats)](https://packagephobia.com/result?p=github-repo-stats) [![license](https://img.shields.io/npm/l/github-repo-stats.svg)](https://piecioshka.mit-license.org) [![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml)
 
 🔎 CLI to inspect GitHub repository statistics: popularity, activity, issues, releases, timeline, and traffic.
 
@@ -20,19 +20,23 @@
 
 ## Usage
 
+Installation:
+
 ```bash
-npm install
-npm run build
-node bin/cli.js <owner>/<repo>
+npm install -g github-repo-stats
+```
+
+```bash
+github-repo-stats <owner>/<repo>
 ```
 
 Examples:
 
 ```bash
-node bin/cli.js piecioshka/super-event-emitter
-node bin/cli.js https://github.com/nodejs/node
-node bin/cli.js piecioshka/super-event-emitter --json
-node bin/cli.js piecioshka/super-event-emitter --no-color
+github-repo-stats piecioshka/super-event-emitter
+github-repo-stats https://github.com/nodejs/node
+github-repo-stats piecioshka/super-event-emitter --json
+github-repo-stats piecioshka/super-event-emitter --no-color
 ```
 
 ## Authentication (optional)
@@ -40,7 +44,7 @@ node bin/cli.js piecioshka/super-event-emitter --no-color
 Without a token the tool uses the anonymous GitHub API limit (60 requests/hour). Generate a token on the [Personal access tokens](https://github.com/settings/personal-access-tokens) page and set the `GITHUB_TOKEN` environment variable to raise the limit and unlock the traffic section:
 
 ```bash
-GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
+GITHUB_TOKEN=ghp_xxx github-repo-stats <owner>/<repo>
 ```
 
 Alternatively, put the token in a `.env` file in the current working directory (see `.env.example`):
@@ -48,7 +52,7 @@ Alternatively, put the token in a `.env` file in the current working directory (
 ```bash
 cp .env.example .env
 # edit .env and set GITHUB_TOKEN
-node bin/cli.js <owner>/<repo>
+github-repo-stats <owner>/<repo>
 ```
 
 Variables already present in the shell environment take precedence over the `.env` file.
@@ -71,7 +75,7 @@ Fine-grained tokens (the default on the linked page) start with the mandatory `M
 If you use the [GitHub CLI](https://cli.github.com), the quickest option is reusing its token, which already has the `repo` scope:
 
 ```bash
-GITHUB_TOKEN=$(gh auth token) node bin/cli.js <owner>/<repo>
+GITHUB_TOKEN=$(gh auth token) github-repo-stats <owner>/<repo>
 ```
 
 ## GitHub Enterprise
@@ -79,7 +83,7 @@ GITHUB_TOKEN=$(gh auth token) node bin/cli.js <owner>/<repo>
 Set the `GITHUB_API_URL` environment variable (or put it in `.env`) to point the tool at a GitHub Enterprise instance:
 
 ```bash
-GITHUB_API_URL=https://github.mycompany.com/api/v3 node bin/cli.js <owner>/<repo>
+GITHUB_API_URL=https://github.mycompany.com/api/v3 github-repo-stats <owner>/<repo>
 ```
 
 When the variable is not set, the tool talks to `https://api.github.com`.
