@@ -81,8 +81,8 @@ describe('renderReport', () => {
 
   it('shows private visibility in the Overview section', () => {
     expect(output).toContain('Visibility');
-    expect(output).toContain('🔐 private');
-    expect(output).not.toContain('[private]');
+    expect(output).toContain('private');
+    expect(output).not.toContain('🔐');
   });
 
   it('shows public visibility in the Overview section', () => {
@@ -90,8 +90,8 @@ describe('renderReport', () => {
       { ...REPORT, repo: { ...REPORT.repo, isPrivate: false } },
       { color: false },
     );
-    expect(publicOutput).toContain('✅ public');
-    expect(publicOutput).not.toContain('🔐');
+    expect(publicOutput).toContain('public');
+    expect(publicOutput).not.toContain('✅');
   });
 
   it('aligns timeline labels with the value column of other sections', () => {
