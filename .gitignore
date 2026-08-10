@@ -1,0 +1,11 @@
+node_modules/
+npm-debug.log
+
+coverage/
+dist/
+types/
+
+tmp/*
+!tmp/.gitkeep
+
+!.vscode/

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "types": ["node"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationDir": "./types/"
+  },
+  "include": ["src"],
+  "exclude": [
+    "bin",
+    "coverage",
+    "dist",
+    "node_modules",
+    "src/*.spec.ts",
+    "types"
+  ]
+}

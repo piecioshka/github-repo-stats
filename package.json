@@ -1,0 +1,67 @@
+{
+  "private": true,
+  "name": "github-repo-stats",
+  "description": "🔎 CLI to inspect GitHub repository statistics: popularity, activity, issues, releases, timeline, and traffic",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Piotr Kowalski",
+    "email": "piecioshka@gmail.com",
+    "url": "https://piecioshka.pl/"
+  },
+  "scripts": {
+    "clear": "rm -rf dist/ types/ coverage/",
+    "clear:all": "rm -rf node_modules/ && npm run clear",
+    "build": "tsc",
+    "start": "node bin/cli.js",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "npm run test -- --coverage",
+    "count": "find . -name '*.ts' -not -path './node_modules/*' | xargs wc -l | sort -r",
+    "lint": "eslint . --ext .js,.ts",
+    "prepare": "husky",
+    "pre-commit": "lint-staged"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^8.57.0",
+    "eslint-config-piecioshka": "^2.3.7",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^62.0.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-smells": "^1.0.1",
+    "eslint-plugin-todo-with-label": "^2.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/piecioshka/github-repo-stats.git"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "types",
+    "package.json",
+    "LICENSE",
+    "README.md",
+    "!**/*.spec.*"
+  ],
+  "keywords": [],
+  "main": "./dist/index.js",
+  "types": "./types/index.d.ts",
+  "bin": {
+    "github-repo-stats": "bin/cli.js"
+  }
+}
