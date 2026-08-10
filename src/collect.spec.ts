@@ -13,6 +13,7 @@ const REPO_BODY = {
   pushed_at: '2023-06-01T00:00:00Z',
   size: 128,
   fork: false,
+  private: true,
   archived: false,
   default_branch: 'main',
   topics: ['cli'],

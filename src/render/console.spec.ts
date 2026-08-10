@@ -14,6 +14,7 @@ const REPORT: Report = {
     pushedAt: '2023-06-01T00:00:00Z',
     sizeKb: 128,
     isFork: false,
+    isPrivate: true,
     isArchived: true,
     defaultBranch: 'main',
     topics: ['cli', 'stats'],
@@ -76,6 +77,18 @@ describe('renderReport', () => {
     expect(output).toContain('v2.0.0');
     expect(output).toContain('5000+');
     expect(output).toContain('archived');
+  });
+
+  it('labels a private repository next to its name', () => {
+    expect(output).toContain('a/b [private]');
+  });
+
+  it('labels a public repository next to its name', () => {
+    const publicOutput = renderReport(
+      { ...REPORT, repo: { ...REPORT.repo, isPrivate: false } },
+      { color: false },
+    );
+    expect(publicOutput).toContain('a/b [public]');
   });
 
   it('renders the timeline with gaps and details', () => {

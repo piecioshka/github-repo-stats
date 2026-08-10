@@ -51,7 +51,12 @@ function formatNumber(value: number): string {
 
 function renderHeader(printer: Printer, report: Report): void {
   const { repo } = report;
-  printer.line(printer.paint(['bold', 'cyan'], repo.fullName));
+  const visibility = repo.isPrivate
+    ? printer.paint('yellow', '[private]')
+    : printer.paint('gray', '[public]');
+  printer.line(
+    `${printer.paint(['bold', 'cyan'], repo.fullName)} ${visibility}`,
+  );
   if (repo.description) {
     printer.line(repo.description);
   }

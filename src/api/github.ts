@@ -31,6 +31,7 @@ export interface RepoInfo {
   pushedAt: string;
   sizeKb: number;
   isFork: boolean;
+  isPrivate: boolean;
   isArchived: boolean;
   defaultBranch: string;
   topics: string[];
@@ -117,6 +118,7 @@ interface RawRepo {
   pushed_at: string;
   size: number;
   fork: boolean;
+  private: boolean;
   archived: boolean;
   default_branch: string;
   topics?: string[];
@@ -142,6 +144,7 @@ export async function getRepo(
     pushedAt: raw.pushed_at,
     sizeKb: raw.size,
     isFork: raw.fork,
+    isPrivate: raw.private,
     isArchived: raw.archived,
     defaultBranch: raw.default_branch,
     topics: raw.topics ?? [],

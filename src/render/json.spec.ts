@@ -14,6 +14,7 @@ const REPORT: Report = {
     pushedAt: '2023-06-01T00:00:00Z',
     sizeKb: 128,
     isFork: false,
+    isPrivate: true,
     isArchived: false,
     defaultBranch: 'main',
     topics: ['cli'],
