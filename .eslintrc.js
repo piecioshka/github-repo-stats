@@ -30,7 +30,8 @@ module.exports = {
 
   // https://eslint.org/docs/rules/
   rules: {
-    indent: ['error', 2],
+    // Prettier owns formatting (enforced by format:check in CI).
+    indent: 'off',
     'no-magic-numbers': 'off',
     'require-jsdoc': 'off',
     'default-case': 'off',
@@ -39,6 +40,20 @@ module.exports = {
     'no-undefined': 'off',
     'id-blacklist': 'off',
     'valid-jsdoc': 'off',
+
+    // The GitHub API responds with snake_case fields.
+    camelcase: 'off',
+
+    // Retry loops exit via return/throw.
+    'no-constant-condition': ['error', { checkLoops: false }],
+    'no-continue': 'off',
+
+    // Types live in TypeScript signatures, not in JSDoc.
+    'jsdoc/require-jsdoc': 'off',
+    'jsdoc/require-param': 'off',
+    'jsdoc/require-param-type': 'off',
+    'jsdoc/require-param-description': 'off',
+    'jsdoc/require-returns': 'off',
 
     'smells/no-switch': 'off',
     'smells/no-complex-switch-case': 'error',

@@ -69,6 +69,7 @@ function resetDateFromHeaders(headers: Headers): Date | null {
  * out the secondary (abuse) rate limit, retries transient failures (network,
  * 5xx), and surfaces everything else as typed errors so callers can react
  * per endpoint.
+ * @param options
  */
 export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
   const headers: Record<string, string> = {
@@ -90,60 +91,93 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     lastRequestAt = Date.now();
   }
 
-  async function get(url: string): Promise<GetResult> {
-    let attempt = 0;
-    let rateLimitWaits = 0;
+  interface RetryState {
+    attempt: number;
+    rateLimitWaits: number;
+  }
 
-    while (true) {
-      await throttle();
+  async function backoffOrThrow(
+    url: string,
+    state: RetryState,
+    error: unknown,
+  ): Promise<void> {
+    state.attempt++;
+    if (state.attempt >= MAX_ATTEMPTS) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Network failed for ${url}: ${message}`);
+    }
+    await sleep(2 ** state.attempt * 1000);
+  }
 
-      let response: Response;
-      try {
-        response = await fetch(url, { headers });
-      } catch (error) {
-        attempt++;
-        if (attempt >= MAX_ATTEMPTS) {
-          const message =
-            error instanceof Error ? error.message : String(error);
-          throw new Error(`Network failed for ${url}: ${message}`);
-        }
-        await sleep(2 ** attempt * 1000);
-        continue;
-      }
+  /** Handles a non-ok response: resolves to retry, throws otherwise. */
+  async function handleFailure(
+    response: Response,
+    url: string,
+    state: RetryState,
+  ): Promise<void> {
+    const bodyText = await response.text().catch(() => '');
 
-      if (isPrimaryRateLimited(response)) {
+    // The secondary (abuse) rate limit sometimes arrives as a plain 403
+    // with no telling headers — the only signal is in the response body.
+    if (response.status === 403 && /secondary rate limit/i.test(bodyText)) {
+      if (++state.rateLimitWaits > MAX_RATE_LIMIT_WAITS) {
         throw new RateLimitError(resetDateFromHeaders(response.headers));
       }
+      await sleep(SECONDARY_LIMIT_WAIT_MS);
+      return;
+    }
 
-      if (response.status >= 500) {
-        attempt++;
-        if (attempt < MAX_ATTEMPTS) {
-          await sleep(2 ** attempt * 1000);
-          continue;
-        }
+    throw new HttpError(response.status, url, bodyText);
+  }
+
+  async function parseResult(response: Response): Promise<GetResult> {
+    // Some endpoints respond 202 with an empty body while GitHub computes
+    // the data — json() would throw there.
+    const text = await response.text();
+    const body: unknown = text ? JSON.parse(text) : null;
+    return { status: response.status, body, headers: response.headers };
+  }
+
+  /** One request attempt; resolves to null when the loop should retry. */
+  async function attempt(
+    url: string,
+    state: RetryState,
+  ): Promise<GetResult | null> {
+    let response: Response;
+    try {
+      response = await fetch(url, { headers });
+    } catch (error) {
+      await backoffOrThrow(url, state, error);
+      return null;
+    }
+
+    if (isPrimaryRateLimited(response)) {
+      throw new RateLimitError(resetDateFromHeaders(response.headers));
+    }
+
+    // 5xx tends to be transient on GitHub's side.
+    if (response.status >= 500 && state.attempt + 1 < MAX_ATTEMPTS) {
+      state.attempt++;
+      await sleep(2 ** state.attempt * 1000);
+      return null;
+    }
+
+    if (!response.ok) {
+      await handleFailure(response, url, state);
+      return null;
+    }
+
+    return parseResult(response);
+  }
+
+  async function get(url: string): Promise<GetResult> {
+    const state: RetryState = { attempt: 0, rateLimitWaits: 0 };
+    while (true) {
+      await throttle();
+      const result = await attempt(url, state);
+      if (result) {
+        return result;
       }
-
-      if (!response.ok) {
-        const bodyText = await response.text().catch(() => '');
-
-        // The secondary (abuse) rate limit sometimes arrives as a plain 403
-        // with no telling headers — the only signal is in the response body.
-        if (response.status === 403 && /secondary rate limit/i.test(bodyText)) {
-          if (++rateLimitWaits > MAX_RATE_LIMIT_WAITS) {
-            throw new RateLimitError(resetDateFromHeaders(response.headers));
-          }
-          await sleep(SECONDARY_LIMIT_WAIT_MS);
-          continue;
-        }
-
-        throw new HttpError(response.status, url, bodyText);
-      }
-
-      // Some endpoints respond 202 with an empty body while GitHub computes
-      // the data — json() would throw there.
-      const text = await response.text();
-      const body: unknown = text ? JSON.parse(text) : null;
-      return { status: response.status, body, headers: response.headers };
     }
   }
 

@@ -89,6 +89,8 @@ function lastPageFromLink(headers: Headers): number | null {
  * Total number of items in a paginated collection queried with `per_page=1`.
  * GitHub omits the `Link` header entirely when everything fits on one page,
  * so with 0 or 1 items the body length is the answer.
+ * @param headers
+ * @param body
  */
 export function countFromCollection(headers: Headers, body: unknown[]): number {
   return lastPageFromLink(headers) ?? body.length;
@@ -176,10 +178,9 @@ export async function getReleases(
 /**
  * First and latest release are picked by `created_at` — the API sort order
  * is not part of the contract.
+ * @param releases
  */
-export function summarizeReleases(
-  releases: Release[],
-): ReleasesSummary | null {
+export function summarizeReleases(releases: Release[]): ReleasesSummary | null {
   if (releases.length === 0) {
     return null;
   }
@@ -252,6 +253,8 @@ export async function getFirstCommit(
  * Sum of commits from the last 52 weeks. GitHub computes these stats lazily
  * and responds 202 until they are ready — retry a few times, then give up
  * gracefully.
+ * @param client
+ * @param ref
  */
 export async function getParticipationCommits(
   client: HttpClient,

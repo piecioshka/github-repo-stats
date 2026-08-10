@@ -191,7 +191,11 @@ describe('getParticipationCommits', () => {
         if (call === 1) {
           return { status: 202, body: null, headers: new Headers() };
         }
-        return { status: 200, body: { all: [1, 2, 3] }, headers: new Headers() };
+        return {
+          status: 200,
+          body: { all: [1, 2, 3] },
+          headers: new Headers(),
+        };
       }),
     };
 

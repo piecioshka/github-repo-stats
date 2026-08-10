@@ -17,7 +17,7 @@
     "coverage",
     "dist",
     "node_modules",
-    "src/*.spec.ts",
+    "src/**/*.spec.ts",
     "types"
   ]
 }

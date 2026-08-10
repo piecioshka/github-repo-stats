@@ -21,9 +21,7 @@ const REPO_BODY = {
   subscribers_count: 3,
 };
 
-function fakeClient(
-  overrides: Record<string, () => unknown> = {},
-): HttpClient {
+function fakeClient(overrides: Record<string, () => unknown> = {}): HttpClient {
   return {
     get: vi.fn(async (url: string) => {
       for (const [fragment, respond] of Object.entries(overrides)) {

@@ -72,7 +72,8 @@ export function buildTimeline(input: TimelineInput): TimelineEvent[] {
   events.push({ label: 'Last push', date: input.pushedAt, detail: null });
 
   events.sort(
-    (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime(),
+    (left, right) =>
+      new Date(left.date).getTime() - new Date(right.date).getTime(),
   );
 
   return events.map((event, index) => ({

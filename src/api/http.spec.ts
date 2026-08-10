@@ -51,12 +51,14 @@ describe('createHttpClient', () => {
   });
 
   it('returns the parsed body and response headers', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      jsonResponse(
-        { name: 'repo' },
-        { headers: { link: '<https://x?page=2>; rel="last"' } },
-      ),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse(
+          { name: 'repo' },
+          { headers: { link: '<https://x?page=2>; rel="last"' } },
+        ),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     const pending = createHttpClient().get('https://api.github.com/repos/a/b');

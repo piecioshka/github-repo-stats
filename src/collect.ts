@@ -36,6 +36,24 @@ function errorMessage(reason: unknown): string {
 }
 
 /**
+ * Unwraps a settled promise: returns its value, or records the failure under
+ * the given section name (first failure wins) and returns null.
+ */
+function unwrap<T>(
+  result: PromiseSettledResult<T>,
+  section: string,
+  errors: Record<string, string>,
+): T | null {
+  if (result.status === 'fulfilled') {
+    return result.value;
+  }
+  if (!(section in errors)) {
+    errors[section] = errorMessage(result.reason);
+  }
+  return null;
+}
+
+/**
  * Fetches all report sections concurrently. The core repository request is
  * fatal, every other section degrades to `null` with a note in `errors`.
  */
@@ -45,42 +63,27 @@ export async function collectStats(
 ): Promise<Report> {
   const repo = await getRepo(client, ref);
 
-  const [openCounts, releases, firstCommit, participation, contributors, traffic] =
-    await Promise.allSettled([
-      getOpenCounts(client, ref),
-      getReleases(client, ref),
-      getFirstCommit(client, ref),
-      getParticipationCommits(client, ref),
-      getContributorsCount(client, ref),
-      getTraffic(client, ref),
-    ]);
+  const settled = await Promise.allSettled([
+    getOpenCounts(client, ref),
+    getReleases(client, ref),
+    getFirstCommit(client, ref),
+    getParticipationCommits(client, ref),
+    getContributorsCount(client, ref),
+    getTraffic(client, ref),
+  ]);
+  const [
+    openCounts,
+    releases,
+    firstCommit,
+    participation,
+    contributors,
+    traffic,
+  ] = settled;
 
   const errors: Record<string, string> = {};
-
-  if (openCounts.status === 'rejected') {
-    errors.issues = errorMessage(openCounts.reason);
-  }
-  if (releases.status === 'rejected') {
-    errors.releases = errorMessage(releases.reason);
-  }
-  if (firstCommit.status === 'rejected') {
-    errors.timeline = errorMessage(firstCommit.reason);
-  }
-  if (participation.status === 'rejected' || contributors.status === 'rejected') {
-    errors.activity = errorMessage(
-      participation.status === 'rejected'
-        ? participation.reason
-        : contributors.status === 'rejected'
-          ? contributors.reason
-          : '',
-    );
-  }
-  if (traffic.status === 'rejected') {
-    errors.traffic = errorMessage(traffic.reason);
-  }
-
-  const releasesSummary =
-    releases.status === 'fulfilled' ? summarizeReleases(releases.value) : null;
+  const releasesSummary = summarizeReleases(
+    unwrap(releases, 'releases', errors) ?? [],
+  );
 
   return {
     repo,
@@ -91,20 +94,18 @@ export async function collectStats(
     },
     activity: {
       lastPushAt: repo.pushedAt,
-      commitsLast52Weeks:
-        participation.status === 'fulfilled' ? participation.value : null,
-      contributors:
-        contributors.status === 'fulfilled' ? contributors.value : null,
+      commitsLast52Weeks: unwrap(participation, 'activity', errors),
+      contributors: unwrap(contributors, 'activity', errors),
     },
-    issues: openCounts.status === 'fulfilled' ? openCounts.value : null,
+    issues: unwrap(openCounts, 'issues', errors),
     releases: releasesSummary,
     timeline: buildTimeline({
       createdAt: repo.createdAt,
       pushedAt: repo.pushedAt,
-      firstCommit: firstCommit.status === 'fulfilled' ? firstCommit.value : null,
+      firstCommit: unwrap(firstCommit, 'timeline', errors),
       releases: releasesSummary,
     }),
-    traffic: traffic.status === 'fulfilled' ? traffic.value : null,
+    traffic: unwrap(traffic, 'traffic', errors),
     errors,
   };
 }

@@ -1,0 +1,198 @@
+import { styleText } from 'node:util';
+
+import { Report } from '../collect';
+
+export interface RenderOptions {
+  color: boolean;
+}
+
+type Style = Parameters<typeof styleText>[0];
+
+const LABEL_WIDTH = 14;
+
+interface Printer {
+  line(text: string): void;
+  section(title: string): void;
+  row(label: string, value: string): void;
+  note(text: string): void;
+  paint(style: Style, text: string): string;
+  output(): string;
+}
+
+function createPrinter(color: boolean): Printer {
+  const lines: string[] = [];
+  const paint = (style: Style, text: string): string =>
+    color ? styleText(style, text) : text;
+
+  return {
+    paint,
+    line: (text) => lines.push(text),
+    section: (title) => {
+      lines.push('');
+      lines.push(paint(['bold', 'underline'], title));
+    },
+    row: (label, value) => {
+      lines.push(`  ${label.padEnd(LABEL_WIDTH)} ${value}`);
+    },
+    note: (text) => {
+      lines.push(`  ${paint('yellow', text)}`);
+    },
+    output: () => `${lines.join('\n')}\n`,
+  };
+}
+
+function formatDate(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString('en-US');
+}
+
+function renderHeader(printer: Printer, report: Report): void {
+  const { repo } = report;
+  printer.line(printer.paint(['bold', 'cyan'], repo.fullName));
+  if (repo.description) {
+    printer.line(repo.description);
+  }
+}
+
+function overviewFlags(printer: Printer, report: Report): string[] {
+  const flags: string[] = [];
+  if (report.repo.isArchived) {
+    flags.push(printer.paint('red', 'archived'));
+  }
+  if (report.repo.isFork) {
+    flags.push('fork');
+  }
+  return flags;
+}
+
+function renderOverview(printer: Printer, report: Report): void {
+  const { repo } = report;
+  const flags = overviewFlags(printer, report);
+
+  printer.section('Overview');
+  printer.row('URL', repo.htmlUrl);
+  if (flags.length > 0) {
+    printer.row('Flags', flags.join(', '));
+  }
+  printer.row('Language', repo.language ?? '—');
+  printer.row('License', repo.license ?? '—');
+  printer.row('Created', formatDate(repo.createdAt));
+  printer.row('Default branch', repo.defaultBranch);
+  printer.row('Size', `${formatNumber(repo.sizeKb)} kB`);
+  if (repo.topics.length > 0) {
+    printer.row('Topics', repo.topics.join(', '));
+  }
+}
+
+function renderPopularity(printer: Printer, report: Report): void {
+  printer.section('Popularity');
+  if (report.popularity) {
+    printer.row('Stars', formatNumber(report.popularity.stars));
+    printer.row('Forks', formatNumber(report.popularity.forks));
+    printer.row('Watchers', formatNumber(report.popularity.watchers));
+  }
+}
+
+function renderActivity(printer: Printer, report: Report): void {
+  printer.section('Activity');
+  if (report.activity) {
+    const { lastPushAt, commitsLast52Weeks, contributors } = report.activity;
+    printer.row('Last push', formatDate(lastPushAt));
+    printer.row(
+      'Commits (52w)',
+      commitsLast52Weeks === null
+        ? 'still being computed by GitHub'
+        : formatNumber(commitsLast52Weeks),
+    );
+    if (typeof contributors === 'number') {
+      printer.row('Contributors', formatNumber(contributors));
+    } else if (contributors !== null) {
+      printer.row('Contributors', contributors);
+    }
+  }
+  if (report.errors.activity) {
+    printer.note(`Section incomplete: ${report.errors.activity}`);
+  }
+}
+
+function renderIssues(printer: Printer, report: Report): void {
+  printer.section('Issues / Pull requests');
+  if (report.issues) {
+    printer.row('Open issues', formatNumber(report.issues.openIssues));
+    printer.row('Open PRs', formatNumber(report.issues.openPulls));
+  }
+  if (report.errors.issues) {
+    printer.note(`Section unavailable: ${report.errors.issues}`);
+  }
+}
+
+function renderReleases(printer: Printer, report: Report): void {
+  printer.section('Releases');
+  if (report.releases) {
+    const { count, latest, totalDownloads } = report.releases;
+    printer.row('Count', formatNumber(count));
+    printer.row('Latest', `${latest.tag} (${formatDate(latest.createdAt)})`);
+    printer.row('Downloads', formatNumber(totalDownloads));
+  } else if (!report.errors.releases) {
+    printer.note('No releases');
+  }
+  if (report.errors.releases) {
+    printer.note(`Section unavailable: ${report.errors.releases}`);
+  }
+}
+
+function renderTimeline(printer: Printer, report: Report): void {
+  printer.section('Timeline');
+  for (const event of report.timeline) {
+    const date = printer.paint('green', formatDate(event.date));
+    const detail = event.detail ? ` (${event.detail})` : '';
+    const gap = event.gap ? printer.paint('gray', ` — ${event.gap}`) : '';
+    printer.line(`  ${date}  ${event.label}${detail}${gap}`);
+  }
+  if (report.errors.timeline) {
+    printer.note(`Timeline incomplete: ${report.errors.timeline}`);
+  }
+}
+
+function renderTraffic(printer: Printer, report: Report): void {
+  printer.section('Traffic (last 14 days)');
+  if (report.traffic?.available) {
+    const { views, clones, referrers, paths } = report.traffic;
+    printer.row(
+      'Views',
+      `${formatNumber(views.count)} (${views.uniques} unique)`,
+    );
+    printer.row(
+      'Clones',
+      `${formatNumber(clones.count)} (${clones.uniques} unique)`,
+    );
+    for (const referrer of referrers.slice(0, 5)) {
+      printer.row('Referrer', `${referrer.referrer} (${referrer.count})`);
+    }
+    for (const path of paths.slice(0, 5)) {
+      printer.row('Path', `${path.path} (${path.count})`);
+    }
+  } else if (report.traffic) {
+    printer.note(`Unavailable: ${report.traffic.reason} (set GITHUB_TOKEN)`);
+  } else if (report.errors.traffic) {
+    printer.note(`Section unavailable: ${report.errors.traffic}`);
+  }
+}
+
+export function renderReport(report: Report, options: RenderOptions): string {
+  const printer = createPrinter(options.color);
+
+  renderHeader(printer, report);
+  renderOverview(printer, report);
+  renderPopularity(printer, report);
+  renderActivity(printer, report);
+  renderIssues(printer, report);
+  renderReleases(printer, report);
+  renderTimeline(printer, report);
+  renderTraffic(printer, report);
+
+  return printer.output();
+}

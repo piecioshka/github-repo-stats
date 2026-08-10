@@ -46,7 +46,9 @@ export function parseCliArgs(argv: string[]): CliOptions {
       },
     });
   } catch (error) {
-    throw new UsageError(error instanceof Error ? error.message : String(error));
+    throw new UsageError(
+      error instanceof Error ? error.message : String(error),
+    );
   }
 
   const [repoArgument] = parsed.positionals;
