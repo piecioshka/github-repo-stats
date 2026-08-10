@@ -2,8 +2,11 @@ node_modules/
 npm-debug.log
 
 .env
+.env.*
+!.env.example
 
 coverage/
+.nyc_output/
 dist/
 types/
 
