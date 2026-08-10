@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "github-repo-stats",
   "description": "🔎 CLI to inspect GitHub repository statistics: popularity, activity, issues, releases, timeline, and traffic",
   "version": "0.1.0",
@@ -15,6 +14,7 @@
     "build": "tsc",
     "start": "node bin/cli.js",
     "format:check": "prettier --check .",
+    "prepublishOnly": "npm run clear && npm run build && npm test",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "npm run test -- --coverage",
