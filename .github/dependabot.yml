@@ -1,11 +1,16 @@
 version: 2
-
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-
+    ignore:
+      # ESLint stays on major 8.x (eslint-config-piecioshka peers eslint ^8)
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      # TypeScript stays below 6.1 (@typescript-eslint/parser peer range)
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
