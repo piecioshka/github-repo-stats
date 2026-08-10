@@ -33,6 +33,7 @@ export interface HttpClientOptions {
 }
 
 export interface GetResult {
+  status: number;
   body: unknown;
   headers: Headers;
 }
@@ -138,8 +139,11 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
         throw new HttpError(response.status, url, bodyText);
       }
 
-      const body = await response.json();
-      return { body, headers: response.headers };
+      // Some endpoints respond 202 with an empty body while GitHub computes
+      // the data — json() would throw there.
+      const text = await response.text();
+      const body: unknown = text ? JSON.parse(text) : null;
+      return { status: response.status, body, headers: response.headers };
     }
   }
 
