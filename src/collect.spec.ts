@@ -87,4 +87,20 @@ describe('collectStats', () => {
     expect(report.releases).toBeNull();
     expect(report.errors.releases).toMatch(/boom/);
   });
+
+  it('points at the missing fine-grained permission when a section gets 403', async () => {
+    const client = fakeClient({
+      '/pulls?': () => {
+        throw new HttpError(
+          403,
+          'https://api.github.com/repos/a/b/pulls',
+          '{"message":"Resource not accessible by personal access token"}',
+        );
+      },
+    });
+
+    const report = await collectStats(client, REF);
+    expect(report.issues).toBeNull();
+    expect(report.errors.issues).toContain('Pull requests: Read-only');
+  });
 });

@@ -12,7 +12,7 @@ import {
   summarizeReleases,
   Traffic,
 } from './api/github';
-import { HttpClient } from './api/http';
+import { HttpClient, HttpError } from './api/http';
 import { buildTimeline, TimelineEvent } from './timeline';
 
 export interface Report {
@@ -31,7 +31,26 @@ export interface Report {
   errors: Record<string, string>;
 }
 
-function errorMessage(reason: unknown): string {
+/**
+ * Fine-grained token permission each section needs (documented in README).
+ * Traffic is absent on purpose — getTraffic maps its own 403.
+ */
+const FINE_GRAINED_PERMISSIONS: Record<string, string> = {
+  issues: 'Pull requests: Read-only',
+  releases: 'Contents: Read-only',
+  timeline: 'Contents: Read-only',
+  activity: 'Contents: Read-only',
+};
+
+function errorMessage(reason: unknown, section: string): string {
+  if (
+    reason instanceof HttpError &&
+    reason.status === 403 &&
+    /not accessible by personal access token/i.test(reason.bodyText) &&
+    section in FINE_GRAINED_PERMISSIONS
+  ) {
+    return `fine-grained token lacks the "${FINE_GRAINED_PERMISSIONS[section]}" permission`;
+  }
   return reason instanceof Error ? reason.message : String(reason);
 }
 
@@ -48,7 +67,7 @@ function unwrap<T>(
     return result.value;
   }
   if (!(section in errors)) {
-    errors[section] = errorMessage(result.reason);
+    errors[section] = errorMessage(result.reason, section);
   }
   return null;
 }
