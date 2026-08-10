@@ -1,4 +1,4 @@
-import { HttpClient, HttpError } from './http';
+import { HttpClient, HttpError, sleep } from './http';
 
 const DEFAULT_API_URL = 'https://api.github.com';
 
@@ -15,6 +15,7 @@ function apiUrl(): string {
 const RELEASES_PAGE_SIZE = 100;
 const PARTICIPATION_MAX_ATTEMPTS = 3;
 const PARTICIPATION_RETRY_MS = 2000;
+const CONTRIBUTORS_CAP = 5000;
 
 export interface RepoRef {
   owner: string;
@@ -60,7 +61,26 @@ export interface ReleasesSummary {
   latest: { tag: string; createdAt: string };
 }
 
+export interface Contributors {
+  count: number;
+  /** True when GitHub refuses to list a huge repository (5000+ authors). */
+  capped: boolean;
+}
+
 export interface TrafficEntry {
+  count: number;
+  uniques: number;
+}
+
+export interface Referrer {
+  referrer: string;
+  count: number;
+  uniques: number;
+}
+
+export interface PopularPath {
+  path: string;
+  title: string;
   count: number;
   uniques: number;
 }
@@ -71,21 +91,45 @@ export type Traffic =
       available: true;
       views: TrafficEntry;
       clones: TrafficEntry;
-      referrers: Array<{ referrer: string; count: number; uniques: number }>;
-      paths: Array<{
-        path: string;
-        title: string;
-        count: number;
-        uniques: number;
-      }>;
+      referrers: Referrer[];
+      paths: PopularPath[];
     };
+
+export type ReportSection =
+  'issues' | 'releases' | 'timeline' | 'activity' | 'traffic';
+
+/**
+ * Fine-grained token permission each report section needs (documented in
+ * the README under "Required token permissions").
+ */
+const FINE_GRAINED_PERMISSIONS: Record<ReportSection, string> = {
+  issues: 'Pull requests: Read-only',
+  releases: 'Contents: Read-only',
+  timeline: 'Contents: Read-only',
+  activity: 'Contents: Read-only',
+  traffic: 'Administration: Read-only',
+};
+
+/**
+ * Maps a 403 caused by a fine-grained token without the section's permission
+ * to a human-readable reason; null for every other error.
+ */
+export function missingPermission(
+  error: unknown,
+  section: ReportSection,
+): string | null {
+  if (
+    error instanceof HttpError &&
+    error.status === 403 &&
+    /not accessible by personal access token/i.test(error.bodyText)
+  ) {
+    return `fine-grained token lacks the "${FINE_GRAINED_PERMISSIONS[section]}" permission`;
+  }
+  return null;
+}
 
 function repoUrl(ref: RepoRef, path = ''): string {
   return `${apiUrl()}/repos/${ref.owner}/${ref.repo}${path}`;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function lastPageFromLink(headers: Headers): number | null {
@@ -101,8 +145,6 @@ function lastPageFromLink(headers: Headers): number | null {
  * Total number of items in a paginated collection queried with `per_page=1`.
  * GitHub omits the `Link` header entirely when everything fits on one page,
  * so with 0 or 1 items the body length is the answer.
- * @param headers
- * @param body
  */
 export function countFromCollection(headers: Headers, body: unknown[]): number {
   return lastPageFromLink(headers) ?? body.length;
@@ -170,27 +212,43 @@ export async function getOpenCounts(
   return { openIssues: Math.max(0, openIssuesAndPulls - openPulls), openPulls };
 }
 
+function releasesUrl(ref: RepoRef, page: number): string {
+  return repoUrl(ref, `/releases?per_page=${RELEASES_PAGE_SIZE}&page=${page}`);
+}
+
+/**
+ * Fetches the first page, then the remaining pages concurrently — the page
+ * count is known upfront from the `Link` header.
+ */
 export async function getReleases(
   client: HttpClient,
   ref: RepoRef,
 ): Promise<Release[]> {
-  const releases: Release[] = [];
-  for (let page = 1; ; page++) {
-    const { body } = await client.get(
-      repoUrl(ref, `/releases?per_page=${RELEASES_PAGE_SIZE}&page=${page}`),
-    );
-    const items = body as Release[];
-    releases.push(...items);
-    if (items.length < RELEASES_PAGE_SIZE) {
-      return releases;
-    }
+  const first = await client.get(releasesUrl(ref, 1));
+  const releases = first.body as Release[];
+
+  const lastPage = lastPageFromLink(first.headers);
+  if (lastPage === null || lastPage === 1) {
+    return releases;
   }
+
+  const pages: number[] = [];
+  for (let page = 2; page <= lastPage; page++) {
+    pages.push(page);
+  }
+  const rest = await Promise.all(
+    pages.map(async (page) => {
+      const { body } = await client.get(releasesUrl(ref, page));
+      return body as Release[];
+    }),
+  );
+
+  return releases.concat(...rest);
 }
 
 /**
  * First and latest release are picked by `created_at` — the API sort order
  * is not part of the contract.
- * @param releases
  */
 export function summarizeReleases(releases: Release[]): ReleasesSummary | null {
   if (releases.length === 0) {
@@ -265,8 +323,6 @@ export async function getFirstCommit(
  * Sum of commits from the last 52 weeks. GitHub computes these stats lazily
  * and responds 202 until they are ready — retry a few times, then give up
  * gracefully.
- * @param client
- * @param ref
  */
 export async function getParticipationCommits(
   client: HttpClient,
@@ -290,12 +346,15 @@ export async function getParticipationCommits(
 export async function getContributorsCount(
   client: HttpClient,
   ref: RepoRef,
-): Promise<number | '5000+'> {
+): Promise<Contributors> {
   try {
     const { headers, body } = await client.get(
       repoUrl(ref, '/contributors?per_page=1&anon=true'),
     );
-    return countFromCollection(headers, body as unknown[]);
+    return {
+      count: countFromCollection(headers, body as unknown[]),
+      capped: false,
+    };
   } catch (error) {
     // GitHub refuses to list contributors for huge repositories.
     if (
@@ -303,7 +362,7 @@ export async function getContributorsCount(
       error.status === 403 &&
       /too large/i.test(error.bodyText)
     ) {
-      return '5000+';
+      return { count: CONTRIBUTORS_CAP, capped: true };
     }
     throw error;
   }
@@ -321,41 +380,33 @@ export async function getTraffic(
       client.get(repoUrl(ref, '/traffic/popular/paths')),
     ]);
 
+    // count/uniques are picked explicitly to drop the daily breakdown
+    // arrays the API sends alongside them.
     const viewsBody = views.body as TrafficEntry;
     const clonesBody = clones.body as TrafficEntry;
     return {
       available: true,
       views: { count: viewsBody.count, uniques: viewsBody.uniques },
       clones: { count: clonesBody.count, uniques: clonesBody.uniques },
-      referrers: referrers.body as Array<{
-        referrer: string;
-        count: number;
-        uniques: number;
-      }>,
-      paths: paths.body as Array<{
-        path: string;
-        title: string;
-        count: number;
-        uniques: number;
-      }>,
+      referrers: referrers.body as Referrer[],
+      paths: paths.body as PopularPath[],
     };
   } catch (error) {
     // Traffic requires authentication (401 without a token) and push access
     // (403 with a foreign token) — both mean "not yours", not "request
     // failed". Rate-limit 403s never reach this point: the HTTP client turns
     // them into RateLimitError.
-    if (error instanceof HttpError && error.status === 401) {
+    if (!(error instanceof HttpError)) {
+      throw error;
+    }
+    if (error.status === 401) {
       return { available: false, reason: 'requires authentication' };
     }
-    if (error instanceof HttpError && error.status === 403) {
-      if (/not accessible by personal access token/i.test(error.bodyText)) {
-        return {
-          available: false,
-          reason:
-            'fine-grained token lacks the "Administration: Read-only" permission',
-        };
-      }
-      return { available: false, reason: 'requires push access' };
+    if (error.status === 403) {
+      return {
+        available: false,
+        reason: missingPermission(error, 'traffic') ?? 'requires push access',
+      };
     }
     throw error;
   }

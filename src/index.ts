@@ -1,6 +1,7 @@
 import { createHttpClient, HttpError, RateLimitError } from './api/http';
 import { collectStats } from './collect';
 import { loadDotEnv } from './env';
+import { errorMessage } from './errors';
 import { CliOptions, parseCliArgs, UsageError } from './parse-args';
 import { renderReport } from './render/console';
 import { buildJsonPayload } from './render/json';
@@ -10,12 +11,6 @@ const USAGE = `Usage: github-repo-stats <owner>/<repo> [--json] [--no-color]
 Reads the optional GITHUB_TOKEN environment variable to raise rate limits
 and unlock the traffic section (requires push access to the repository).`;
 
-function printUsage(error: UsageError): void {
-  console.error(error.message);
-  console.error('');
-  console.error(USAGE);
-}
-
 function describeFailure(error: unknown, options: CliOptions): string {
   if (error instanceof HttpError && error.status === 404) {
     return `Repository ${options.owner}/${options.repo} does not exist or is private (set GITHUB_TOKEN).`;
@@ -23,7 +18,7 @@ function describeFailure(error: unknown, options: CliOptions): string {
   if (error instanceof RateLimitError) {
     return error.message;
   }
-  return error instanceof Error ? error.message : String(error);
+  return errorMessage(error);
 }
 
 async function printReport(options: CliOptions): Promise<void> {
@@ -37,18 +32,20 @@ async function printReport(options: CliOptions): Promise<void> {
 }
 
 export async function run(argv: string[]): Promise<number> {
-  loadDotEnv();
-
-  let options;
+  let options: CliOptions;
   try {
     options = parseCliArgs(argv);
   } catch (error) {
     if (error instanceof UsageError) {
-      printUsage(error);
+      console.error(`${error.message}\n\n${USAGE}`);
       return 1;
     }
     throw error;
   }
+
+  // The .env file may hold GITHUB_TOKEN and GITHUB_API_URL; skip reading it
+  // entirely when the arguments are invalid anyway.
+  loadDotEnv();
 
   try {
     await printReport(options);

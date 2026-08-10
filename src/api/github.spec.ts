@@ -11,22 +11,7 @@ import {
   getTraffic,
   summarizeReleases,
 } from './github';
-
-function fakeClient(
-  routes: Record<string, () => { body: unknown; headers?: Headers }>,
-): HttpClient {
-  return {
-    get: vi.fn(async (url: string) => {
-      for (const [fragment, respond] of Object.entries(routes)) {
-        if (url.includes(fragment)) {
-          const { body, headers } = respond();
-          return { status: 200, body, headers: headers ?? new Headers() };
-        }
-      }
-      throw new Error(`Unexpected URL in test: ${url}`);
-    }),
-  };
-}
+import { fakeClient } from '../testing/fixtures';
 
 const REF = { owner: 'a', repo: 'b' };
 
@@ -112,23 +97,33 @@ describe('getOpenCounts', () => {
 });
 
 describe('getReleases', () => {
-  it('paginates until a page is shorter than the page size', async () => {
+  it('fetches the remaining pages announced by the Link header', async () => {
     const fullPage = Array.from({ length: 100 }, (unused, index) => ({
       id: index,
     }));
-    const responses = [fullPage, [{ id: 100 }]];
-    let call = 0;
-    const client: HttpClient = {
-      get: vi.fn(async () => ({
-        status: 200,
-        body: responses[call++],
-        headers: new Headers(),
-      })),
-    };
+    const client = fakeClient({
+      '&page=1': () => ({
+        body: fullPage,
+        headers: new Headers({
+          link: '<https://api.github.com/repos/a/b/releases?per_page=100&page=2>; rel="last"',
+        }),
+      }),
+      '&page=2': () => ({ body: [{ id: 100 }] }),
+    });
 
     const releases = await getReleases(client, REF);
     expect(releases).toHaveLength(101);
     expect(client.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops after one request when there is a single page', async () => {
+    const client = fakeClient({
+      '/releases?': () => ({ body: [{ id: 1 }] }),
+    });
+
+    const releases = await getReleases(client, REF);
+    expect(releases).toHaveLength(1);
+    expect(client.get).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -277,10 +272,13 @@ describe('getContributorsCount', () => {
       }),
     });
 
-    expect(await getContributorsCount(client, REF)).toEqual(7);
+    expect(await getContributorsCount(client, REF)).toEqual({
+      count: 7,
+      capped: false,
+    });
   });
 
-  it('returns "5000+" when GitHub refuses to list a huge repository', async () => {
+  it('caps the count when GitHub refuses to list a huge repository', async () => {
     const client: HttpClient = {
       get: vi.fn(async (url: string) => {
         throw new HttpError(
@@ -291,7 +289,10 @@ describe('getContributorsCount', () => {
       }),
     };
 
-    expect(await getContributorsCount(client, REF)).toEqual('5000+');
+    expect(await getContributorsCount(client, REF)).toEqual({
+      count: 5000,
+      capped: true,
+    });
   });
 });
 

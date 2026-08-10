@@ -60,7 +60,7 @@ export function buildTimeline(input: TimelineInput): TimelineEvent[] {
       date: first.createdAt,
       detail: null,
     });
-    if (latest.createdAt !== first.createdAt || latest.tag !== first.tag) {
+    if (input.releases.count > 1) {
       events.push({
         label: `Latest release ${latest.tag}`,
         date: latest.createdAt,
@@ -71,19 +71,13 @@ export function buildTimeline(input: TimelineInput): TimelineEvent[] {
 
   events.push({ label: 'Last push', date: input.pushedAt, detail: null });
 
-  events.sort(
-    (left, right) =>
-      new Date(left.date).getTime() - new Date(right.date).getTime(),
-  );
+  // Parse each date once; sort and gaps reuse the same timestamp.
+  const timed = events
+    .map((event) => ({ event, time: Date.parse(event.date) }))
+    .sort((left, right) => left.time - right.time);
 
-  return events.map((event, index) => ({
+  return timed.map(({ event, time }, index) => ({
     ...event,
-    gap:
-      index === 0
-        ? null
-        : describeGap(
-            new Date(event.date).getTime() -
-              new Date(events[index - 1].date).getTime(),
-          ),
+    gap: index === 0 ? null : describeGap(time - timed[index - 1].time),
   }));
 }

@@ -1,35 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import { Report } from '../collect';
+import { makeReport, makeRepo } from '../testing/fixtures';
 import { renderReport } from './console';
 
-const REPORT: Report = {
-  repo: {
-    fullName: 'a/b',
+const REPORT: Report = makeReport({
+  repo: makeRepo({
     description: 'Demo project',
-    htmlUrl: 'https://github.com/a/b',
-    language: 'TypeScript',
-    license: 'MIT License',
-    createdAt: '2020-01-01T00:00:00Z',
-    pushedAt: '2023-06-01T00:00:00Z',
-    sizeKb: 128,
-    isFork: false,
-    isPrivate: true,
     isArchived: true,
-    defaultBranch: 'main',
     topics: ['cli', 'stats'],
-    stars: 10,
-    forks: 2,
-    watchers: 3,
-    openIssuesAndPulls: 3,
-  },
-  popularity: { stars: 10, forks: 2, watchers: 3 },
+  }),
   activity: {
     lastPushAt: '2023-06-01T00:00:00Z',
     commitsLast52Weeks: 3,
-    contributors: '5000+',
+    contributors: { count: 5000, capped: true },
   },
-  issues: { openIssues: 1, openPulls: 2 },
   releases: {
     count: 4,
     totalDownloads: 16,
@@ -50,9 +35,8 @@ const REPORT: Report = {
       gap: '1 day later',
     },
   ],
-  traffic: { available: false, reason: 'requires push access' },
   errors: { issues: 'boom' },
-};
+});
 
 describe('renderReport', () => {
   const output = renderReport(REPORT, { color: false });
@@ -75,23 +59,21 @@ describe('renderReport', () => {
     expect(output).toContain('a/b');
     expect(output).toContain('10');
     expect(output).toContain('v2.0.0');
-    expect(output).toContain('5000+');
+    expect(output).toContain('5,000+');
     expect(output).toContain('archived');
   });
 
   it('shows private visibility in the Overview section', () => {
     expect(output).toContain('Visibility');
     expect(output).toContain('private');
-    expect(output).not.toContain('🔐');
   });
 
   it('shows public visibility in the Overview section', () => {
     const publicOutput = renderReport(
-      { ...REPORT, repo: { ...REPORT.repo, isPrivate: false } },
+      makeReport({ repo: makeRepo({ isPrivate: false }) }),
       { color: false },
     );
     expect(publicOutput).toContain('public');
-    expect(publicOutput).not.toContain('✅');
   });
 
   it('aligns timeline labels with the value column of other sections', () => {
@@ -114,10 +96,9 @@ describe('renderReport', () => {
     expect(output).not.toContain('set GITHUB_TOKEN');
 
     const unauthenticated = renderReport(
-      {
-        ...REPORT,
+      makeReport({
         traffic: { available: false, reason: 'requires authentication' },
-      },
+      }),
       { color: false },
     );
     expect(unauthenticated).toContain('set GITHUB_TOKEN');

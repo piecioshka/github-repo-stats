@@ -7,34 +7,27 @@ export interface RenderOptions {
 }
 
 type Style = Parameters<typeof styleText>[0];
+type Printer = ReturnType<typeof createPrinter>;
 
 const LABEL_WIDTH = 14;
+const NUMBER_FORMAT = new Intl.NumberFormat('en-US');
 
-interface Printer {
-  line(text: string): void;
-  section(title: string): void;
-  row(label: string, value: string): void;
-  note(text: string): void;
-  paint(style: Style, text: string): string;
-  output(): string;
-}
-
-function createPrinter(color: boolean): Printer {
+function createPrinter(color: boolean) {
   const lines: string[] = [];
   const paint = (style: Style, text: string): string =>
     color ? styleText(style, text) : text;
 
   return {
     paint,
-    line: (text) => lines.push(text),
-    section: (title) => {
+    line: (text: string) => lines.push(text),
+    section: (title: string) => {
       lines.push('');
       lines.push(paint(['bold', 'underline'], title));
     },
-    row: (label, value) => {
+    row: (label: string, value: string) => {
       lines.push(`  ${label.padEnd(LABEL_WIDTH)} ${value}`);
     },
-    note: (text) => {
+    note: (text: string) => {
       lines.push(`  ${paint('yellow', text)}`);
     },
     output: () => `${lines.join('\n')}\n`,
@@ -46,7 +39,7 @@ function formatDate(iso: string): string {
 }
 
 function formatNumber(value: number): string {
-  return value.toLocaleString('en-US');
+  return NUMBER_FORMAT.format(value);
 }
 
 function renderHeader(printer: Printer, report: Report): void {
@@ -57,20 +50,12 @@ function renderHeader(printer: Printer, report: Report): void {
   }
 }
 
-function overviewFlags(printer: Printer, report: Report): string[] {
-  const flags: string[] = [];
-  if (report.repo.isArchived) {
-    flags.push(printer.paint('red', 'archived'));
-  }
-  if (report.repo.isFork) {
-    flags.push('fork');
-  }
-  return flags;
-}
-
 function renderOverview(printer: Printer, report: Report): void {
   const { repo } = report;
-  const flags = overviewFlags(printer, report);
+  const flags = [
+    repo.isArchived && printer.paint('red', 'archived'),
+    repo.isFork && 'fork',
+  ].filter((flag) => typeof flag === 'string');
 
   printer.section('Overview');
   printer.row('URL', repo.htmlUrl);
@@ -95,29 +80,25 @@ function renderOverview(printer: Printer, report: Report): void {
 
 function renderPopularity(printer: Printer, report: Report): void {
   printer.section('Popularity');
-  if (report.popularity) {
-    printer.row('Stars', formatNumber(report.popularity.stars));
-    printer.row('Forks', formatNumber(report.popularity.forks));
-    printer.row('Watchers', formatNumber(report.popularity.watchers));
-  }
+  printer.row('Stars', formatNumber(report.popularity.stars));
+  printer.row('Forks', formatNumber(report.popularity.forks));
+  printer.row('Watchers', formatNumber(report.popularity.watchers));
 }
 
 function renderActivity(printer: Printer, report: Report): void {
+  const { lastPushAt, commitsLast52Weeks, contributors } = report.activity;
+
   printer.section('Activity');
-  if (report.activity) {
-    const { lastPushAt, commitsLast52Weeks, contributors } = report.activity;
-    printer.row('Last push', formatDate(lastPushAt));
-    printer.row(
-      'Commits (52w)',
-      commitsLast52Weeks === null
-        ? 'still being computed by GitHub'
-        : formatNumber(commitsLast52Weeks),
-    );
-    if (typeof contributors === 'number') {
-      printer.row('Contributors', formatNumber(contributors));
-    } else if (contributors !== null) {
-      printer.row('Contributors', contributors);
-    }
+  printer.row('Last push', formatDate(lastPushAt));
+  printer.row(
+    'Commits (52w)',
+    commitsLast52Weeks === null
+      ? 'still being computed by GitHub'
+      : formatNumber(commitsLast52Weeks),
+  );
+  if (contributors) {
+    const count = formatNumber(contributors.count);
+    printer.row('Contributors', contributors.capped ? `${count}+` : count);
   }
   if (report.errors.activity) {
     printer.note(`Section incomplete: ${report.errors.activity}`);
@@ -137,16 +118,15 @@ function renderIssues(printer: Printer, report: Report): void {
 
 function renderReleases(printer: Printer, report: Report): void {
   printer.section('Releases');
-  if (report.releases) {
+  if (report.errors.releases) {
+    printer.note(`Section unavailable: ${report.errors.releases}`);
+  } else if (report.releases) {
     const { count, latest, totalDownloads } = report.releases;
     printer.row('Count', formatNumber(count));
     printer.row('Latest', `${latest.tag} (${formatDate(latest.createdAt)})`);
     printer.row('Downloads', formatNumber(totalDownloads));
-  } else if (!report.errors.releases) {
+  } else {
     printer.note('No releases');
-  }
-  if (report.errors.releases) {
-    printer.note(`Section unavailable: ${report.errors.releases}`);
   }
 }
 

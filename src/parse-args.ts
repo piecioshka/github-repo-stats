@@ -1,5 +1,7 @@
 import { parseArgs } from 'node:util';
 
+import { errorMessage } from './errors';
+
 export class UsageError extends Error {}
 
 export interface CliOptions {
@@ -13,15 +15,14 @@ const REPO_PATTERN = /^([\w.-]+)\/([\w.-]+)$/;
 
 function parseRepoArgument(argument: string): { owner: string; repo: string } {
   let candidate = argument;
+  const hasScheme = candidate.includes('://');
 
-  if (candidate.includes('://') || candidate.startsWith('github.com/')) {
-    const url = new URL(
-      candidate.includes('://') ? candidate : `https://${candidate}`,
-    );
+  if (hasScheme || candidate.startsWith('github.com/')) {
+    const url = new URL(hasScheme ? candidate : `https://${candidate}`);
     if (url.hostname !== 'github.com') {
       throw new UsageError(`Unsupported host: ${url.hostname}`);
     }
-    candidate = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    candidate = url.pathname.replace(/^\/+|\/+$/g, '');
   }
 
   candidate = candidate.replace(/\.git$/, '');
@@ -46,9 +47,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
       },
     });
   } catch (error) {
-    throw new UsageError(
-      error instanceof Error ? error.message : String(error),
-    );
+    throw new UsageError(errorMessage(error));
   }
 
   const [repoArgument] = parsed.positionals;

@@ -1,4 +1,5 @@
 import {
+  Contributors,
   getContributorsCount,
   getFirstCommit,
   getOpenCounts,
@@ -6,70 +7,32 @@ import {
   getReleases,
   getRepo,
   getTraffic,
+  missingPermission,
   ReleasesSummary,
   RepoInfo,
   RepoRef,
+  ReportSection,
   summarizeReleases,
   Traffic,
 } from './api/github';
-import { HttpClient, HttpError } from './api/http';
+import { HttpClient } from './api/http';
+import { errorMessage } from './errors';
 import { buildTimeline, TimelineEvent } from './timeline';
 
 export interface Report {
   repo: RepoInfo;
-  popularity: { stars: number; forks: number; watchers: number } | null;
+  popularity: { stars: number; forks: number; watchers: number };
   activity: {
     lastPushAt: string;
     commitsLast52Weeks: number | null;
-    contributors: number | '5000+' | null;
-  } | null;
+    contributors: Contributors | null;
+  };
   issues: { openIssues: number; openPulls: number } | null;
   releases: ReleasesSummary | null;
   timeline: TimelineEvent[];
   traffic: Traffic | null;
-  /** Section name → reason, for sections that failed to load. */
-  errors: Record<string, string>;
-}
-
-/**
- * Fine-grained token permission each section needs (documented in README).
- * Traffic is absent on purpose — getTraffic maps its own 403.
- */
-const FINE_GRAINED_PERMISSIONS: Record<string, string> = {
-  issues: 'Pull requests: Read-only',
-  releases: 'Contents: Read-only',
-  timeline: 'Contents: Read-only',
-  activity: 'Contents: Read-only',
-};
-
-function errorMessage(reason: unknown, section: string): string {
-  if (
-    reason instanceof HttpError &&
-    reason.status === 403 &&
-    /not accessible by personal access token/i.test(reason.bodyText) &&
-    section in FINE_GRAINED_PERMISSIONS
-  ) {
-    return `fine-grained token lacks the "${FINE_GRAINED_PERMISSIONS[section]}" permission`;
-  }
-  return reason instanceof Error ? reason.message : String(reason);
-}
-
-/**
- * Unwraps a settled promise: returns its value, or records the failure under
- * the given section name (first failure wins) and returns null.
- */
-function unwrap<T>(
-  result: PromiseSettledResult<T>,
-  section: string,
-  errors: Record<string, string>,
-): T | null {
-  if (result.status === 'fulfilled') {
-    return result.value;
-  }
-  if (!(section in errors)) {
-    errors[section] = errorMessage(result.reason, section);
-  }
-  return null;
+  /** Section → reason, for sections that failed to load. */
+  errors: Partial<Record<ReportSection, string>>;
 }
 
 /**
@@ -80,29 +43,50 @@ export async function collectStats(
   client: HttpClient,
   ref: RepoRef,
 ): Promise<Report> {
-  const repo = await getRepo(client, ref);
+  const repoPromise = getRepo(client, ref);
 
-  const settled = await Promise.allSettled([
-    getOpenCounts(client, ref, repo.openIssuesAndPulls),
-    getReleases(client, ref),
-    getFirstCommit(client, ref),
-    getParticipationCommits(client, ref),
-    getContributorsCount(client, ref),
-    getTraffic(client, ref),
-  ]);
   const [
+    repoResult,
     openCounts,
     releases,
     firstCommit,
     participation,
     contributors,
     traffic,
-  ] = settled;
+  ] = await Promise.allSettled([
+    repoPromise,
+    repoPromise.then((repo) =>
+      getOpenCounts(client, ref, repo.openIssuesAndPulls),
+    ),
+    getReleases(client, ref),
+    getFirstCommit(client, ref),
+    getParticipationCommits(client, ref),
+    getContributorsCount(client, ref),
+    getTraffic(client, ref),
+  ]);
 
-  const errors: Record<string, string> = {};
-  const releasesSummary = summarizeReleases(
-    unwrap(releases, 'releases', errors) ?? [],
-  );
+  if (repoResult.status === 'rejected') {
+    throw repoResult.reason;
+  }
+  const repo = repoResult.value;
+
+  const errors: Partial<Record<ReportSection, string>> = {};
+
+  /** Unwraps a settled promise, recording the first failure per section. */
+  const unwrap = <T>(
+    result: PromiseSettledResult<T>,
+    section: ReportSection,
+  ): T | null => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    }
+    errors[section] ??=
+      missingPermission(result.reason, section) ?? errorMessage(result.reason);
+    return null;
+  };
+
+  const releaseList = unwrap(releases, 'releases');
+  const releasesSummary = releaseList ? summarizeReleases(releaseList) : null;
 
   return {
     repo,
@@ -113,18 +97,18 @@ export async function collectStats(
     },
     activity: {
       lastPushAt: repo.pushedAt,
-      commitsLast52Weeks: unwrap(participation, 'activity', errors),
-      contributors: unwrap(contributors, 'activity', errors),
+      commitsLast52Weeks: unwrap(participation, 'activity'),
+      contributors: unwrap(contributors, 'activity'),
     },
-    issues: unwrap(openCounts, 'issues', errors),
+    issues: unwrap(openCounts, 'issues'),
     releases: releasesSummary,
     timeline: buildTimeline({
       createdAt: repo.createdAt,
       pushedAt: repo.pushedAt,
-      firstCommit: unwrap(firstCommit, 'timeline', errors),
+      firstCommit: unwrap(firstCommit, 'timeline'),
       releases: releasesSummary,
     }),
-    traffic: unwrap(traffic, 'traffic', errors),
+    traffic: unwrap(traffic, 'traffic'),
     errors,
   };
 }
