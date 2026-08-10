@@ -37,7 +37,7 @@ node bin/cli.js piecioshka/super-event-emitter --no-color
 
 ## Authentication (optional)
 
-Without a token the tool uses the anonymous GitHub API limit (60 requests/hour). Set the `GITHUB_TOKEN` environment variable to raise the limit and unlock the traffic section:
+Without a token the tool uses the anonymous GitHub API limit (60 requests/hour). Generate a token on the [Personal access tokens](https://github.com/settings/personal-access-tokens) page and set the `GITHUB_TOKEN` environment variable to raise the limit and unlock the traffic section:
 
 ```bash
 GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
