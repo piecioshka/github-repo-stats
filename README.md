@@ -1,59 +1,66 @@
-# INSERT_NAME
+# github-repo-stats 🔎
 
-[![cli-available](https://badgen.net/static/cli/available/?icon=terminal)](https://runkit.com/npm/INSERT_NAME) [![node version](https://img.shields.io/node/v/INSERT_NAME.svg)](https://www.npmjs.com/package/INSERT_NAME) [![npm version](https://badge.fury.io/js/INSERT_NAME.svg)](https://badge.fury.io/js/INSERT_NAME) [![downloads count](https://img.shields.io/npm/dt/INSERT_NAME.svg)](https://www.npmjs.com/package/INSERT_NAME) [![size](https://packagephobia.com/badge?p=INSERT_NAME)](https://packagephobia.com/result?p=INSERT_NAME) [![license](https://img.shields.io/npm/l/INSERT_NAME.svg)](https://piecioshka.mit-license.org) [![github-ci](https://github.com/piecioshka/INSERT_NAME/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/INSERT_NAME/actions/workflows/testing.yml)
+[![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://piecioshka.mit-license.org)
 
-📒 TODO
+🔎 CLI to inspect GitHub repository statistics: popularity, activity, issues, releases, timeline, and traffic.
 
 > Give a ⭐️ if this project helped you!
 
-## Preview 🎉
-
-<https://piecioshka.github.io/INSERT_NAME/>
-
-## Motivation
-
-TODO
-
 ## Features
 
-- ✅ Done
-- ⛔ Not done
-
-## Step by step 👣
-
-- ...
+- ✅ Overview: language, license, size, topics, archived/fork flags
+- ✅ Popularity: stars, forks, watchers
+- ✅ Activity: last push, commits from the last 52 weeks, contributors
+- ✅ Issues / PRs: open issues (without PRs) and open pull requests
+- ✅ Releases: count, latest tag, total asset downloads
+- ✅ Timeline: repository created → first commit → first release → latest release → last push, with human-readable gaps
+- ✅ Traffic (with `GITHUB_TOKEN` and push access): views, clones, top referrers, top paths
+- ✅ `--json` output for scripting
+- ✅ Zero runtime dependencies
 
 ## Usage
 
-Installation:
+```bash
+npm install
+npm run build
+node bin/cli.js <owner>/<repo>
+```
+
+Examples:
 
 ```bash
-npm install INSERT_NAME
+node bin/cli.js piecioshka/super-event-emitter
+node bin/cli.js https://github.com/nodejs/node
+node bin/cli.js piecioshka/super-event-emitter --json
+node bin/cli.js piecioshka/super-event-emitter --no-color
 ```
 
-```javascript
+## Authentication (optional)
 
-```
-
-## CLI
-
-Installation:
+Without a token the tool uses the anonymous GitHub API limit (60 requests/hour). Set the `GITHUB_TOKEN` environment variable to raise the limit and unlock the traffic section:
 
 ```bash
-npm install -g INSERT_NAME
+GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
 ```
+
+> [!NOTE] The traffic section requires push access to the repository — GitHub exposes views and clones only to maintainers, and only for the last 14 days.
+
+> [!TIP] The token is read exclusively from the environment. There is no `--token` flag on purpose: command-line arguments end up in the shell history.
+
+## How it works
+
+- Open issue and PR counts are read from the `Link` pagination header with `per_page=1` — no Search API, no listing thousands of items. The `/issues` endpoint includes pull requests, so the tool subtracts them.
+- The first commit is found with two requests: the `Link` header points at the last page of `/commits?per_page=1`, which holds the oldest commit.
+- The HTTP client waits out GitHub's secondary rate limit (detected by response body, not headers), retries transient failures, and reports the reset time when the primary limit is exhausted.
+
+## Development
 
 ```bash
-
+npm test              # unit tests (Vitest)
+npm run lint          # ESLint
+npm run build         # TypeScript
+npm run format:check  # Prettier
 ```
-
-## 🤝 Contributing
-
-Contributions, issues and feature requests are welcome!<br /> Feel free to check [issues page](https://github.com/piecioshka/INSERT_NAME/issues/).
-
-## Related
-
-- [xxx](https://github.com/piecioshka/xxx)
 
 ## License
 
