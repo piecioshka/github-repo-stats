@@ -151,10 +151,14 @@ function renderReleases(printer: Printer, report: Report): void {
 function renderTimeline(printer: Printer, report: Report): void {
   printer.section('Timeline');
   for (const event of report.timeline) {
-    const date = printer.paint('green', formatDate(event.date));
+    // Pad before painting — ANSI codes would break padEnd's math.
+    const date = printer.paint(
+      'green',
+      formatDate(event.date).padEnd(LABEL_WIDTH),
+    );
     const detail = event.detail ? ` (${event.detail})` : '';
     const gap = event.gap ? printer.paint('gray', ` — ${event.gap}`) : '';
-    printer.line(`  ${date}  ${event.label}${detail}${gap}`);
+    printer.line(`  ${date} ${event.label}${detail}${gap}`);
   }
   if (report.errors.timeline) {
     printer.note(`Timeline incomplete: ${report.errors.timeline}`);

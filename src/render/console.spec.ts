@@ -94,6 +94,12 @@ describe('renderReport', () => {
     expect(publicOutput).not.toContain('🔐');
   });
 
+  it('aligns timeline labels with the value column of other sections', () => {
+    // Dates are padded to LABEL_WIDTH (14) like row labels, so the second
+    // column starts at the same offset in every section.
+    expect(output).toContain('  2020-01-02     First commit');
+  });
+
   it('renders the timeline with gaps and details', () => {
     expect(output).toContain('First commit');
     expect(output).toContain('1 day later');
