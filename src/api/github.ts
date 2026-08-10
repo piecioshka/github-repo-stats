@@ -348,6 +348,13 @@ export async function getTraffic(
       return { available: false, reason: 'requires authentication' };
     }
     if (error instanceof HttpError && error.status === 403) {
+      if (/not accessible by personal access token/i.test(error.bodyText)) {
+        return {
+          available: false,
+          reason:
+            'fine-grained token lacks the "Administration: Read-only" permission',
+        };
+      }
       return { available: false, reason: 'requires push access' };
     }
     throw error;

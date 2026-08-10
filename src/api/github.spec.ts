@@ -307,6 +307,24 @@ describe('getTraffic', () => {
     expect(traffic.available).toEqual(false);
   });
 
+  it('points at the missing fine-grained permission on a token 403', async () => {
+    const client: HttpClient = {
+      get: vi.fn(async (url: string) => {
+        throw new HttpError(
+          403,
+          url,
+          '{"message":"Resource not accessible by personal access token"}',
+        );
+      }),
+    };
+
+    const traffic = await getTraffic(client, REF);
+    expect(traffic.available).toEqual(false);
+    if (!traffic.available) {
+      expect(traffic.reason).toContain('Administration: Read-only');
+    }
+  });
+
   it('reports unavailability on 401 when running without a token', async () => {
     const client: HttpClient = {
       get: vi.fn(async (url: string) => {

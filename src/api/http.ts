@@ -8,13 +8,31 @@ const MAX_ATTEMPTS = 3;
 const MAX_RATE_LIMIT_WAITS = 3;
 const SECONDARY_LIMIT_WAIT_MS = 60_000;
 
+function apiMessage(bodyText: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(bodyText);
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      'message' in parsed &&
+      typeof parsed.message === 'string'
+    ) {
+      return parsed.message;
+    }
+  } catch {
+    // Not a JSON body — nothing to extract.
+  }
+  return null;
+}
+
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
     public readonly url: string,
     public readonly bodyText: string,
   ) {
-    super(`GitHub API ${status} for ${url}`);
+    const detail = apiMessage(bodyText);
+    super(`GitHub API ${status} for ${url}${detail ? ` — ${detail}` : ''}`);
   }
 }
 

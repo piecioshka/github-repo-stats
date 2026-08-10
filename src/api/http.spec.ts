@@ -87,6 +87,26 @@ describe('createHttpClient', () => {
     await expect(pending).rejects.toMatchObject({ status: 404 });
   });
 
+  it('includes the API message from the response body in HttpError', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse(
+          { message: 'Resource not accessible by personal access token' },
+          { status: 403 },
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = createHttpClient().get('https://api.github.com/repos/a/b');
+    pending.catch(() => {});
+    await vi.runAllTimersAsync();
+
+    await expect(pending).rejects.toThrow(
+      /Resource not accessible by personal access token/,
+    );
+  });
+
   it('throws RateLimitError with the reset date on an exhausted primary limit', async () => {
     const resetEpochSeconds = Math.floor(Date.now() / 1000) + 1800;
     const fetchMock = vi.fn().mockResolvedValue(

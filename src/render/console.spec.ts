@@ -104,6 +104,19 @@ describe('renderReport', () => {
     expect(output).toContain('requires push access');
   });
 
+  it('suggests GITHUB_TOKEN only when no token was used', () => {
+    expect(output).not.toContain('set GITHUB_TOKEN');
+
+    const unauthenticated = renderReport(
+      {
+        ...REPORT,
+        traffic: { available: false, reason: 'requires authentication' },
+      },
+      { color: false },
+    );
+    expect(unauthenticated).toContain('set GITHUB_TOKEN');
+  });
+
   it('annotates failed sections', () => {
     expect(output).toContain('boom');
   });

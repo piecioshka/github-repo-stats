@@ -180,7 +180,11 @@ function renderTraffic(printer: Printer, report: Report): void {
       printer.row('Path', `${path.path} (${path.count})`);
     }
   } else if (report.traffic) {
-    printer.note(`Unavailable: ${report.traffic.reason} (set GITHUB_TOKEN)`);
+    const hint =
+      report.traffic.reason === 'requires authentication'
+        ? ' (set GITHUB_TOKEN)'
+        : '';
+    printer.note(`Unavailable: ${report.traffic.reason}${hint}`);
   } else if (report.errors.traffic) {
     printer.note(`Section unavailable: ${report.errors.traffic}`);
   }
