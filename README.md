@@ -6,6 +6,10 @@
 
 > Give a ⭐️ if this project helped you!
 
+## Preview 🎉
+
+![github-repo-stats demo](demo/demo.gif)
+
 ## Features
 
 - ✅ Overview: language, license, size, topics, archived/fork flags
