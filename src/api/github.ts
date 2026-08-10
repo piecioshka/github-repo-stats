@@ -1,6 +1,16 @@
 import { HttpClient, HttpError } from './http';
 
-const API = 'https://api.github.com';
+const DEFAULT_API_URL = 'https://api.github.com';
+
+/**
+ * Base URL of the GitHub REST API. Overridable with the GITHUB_API_URL
+ * environment variable for GitHub Enterprise, e.g.
+ * `https://github.mycompany.com/api/v3`.
+ */
+function apiUrl(): string {
+  const override = process.env.GITHUB_API_URL;
+  return override ? override.replace(/\/+$/, '') : DEFAULT_API_URL;
+}
 
 const RELEASES_PAGE_SIZE = 100;
 const PARTICIPATION_MAX_ATTEMPTS = 3;
@@ -70,7 +80,7 @@ export type Traffic =
     };
 
 function repoUrl(ref: RepoRef, path = ''): string {
-  return `${API}/repos/${ref.owner}/${ref.repo}${path}`;
+  return `${apiUrl()}/repos/${ref.owner}/${ref.repo}${path}`;
 }
 
 function sleep(ms: number): Promise<void> {

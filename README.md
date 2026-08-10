@@ -53,6 +53,16 @@ node bin/cli.js <owner>/<repo>
 
 Variables already present in the shell environment take precedence over the `.env` file.
 
+## GitHub Enterprise
+
+Set the `GITHUB_API_URL` environment variable (or put it in `.env`) to point the tool at a GitHub Enterprise instance:
+
+```bash
+GITHUB_API_URL=https://github.mycompany.com/api/v3 node bin/cli.js <owner>/<repo>
+```
+
+When the variable is not set, the tool talks to `https://api.github.com`.
+
 > [!NOTE]
 >
 > The traffic section requires push access to the repository — GitHub exposes views and clones only to maintainers, and only for the last 14 days.

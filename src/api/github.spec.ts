@@ -44,6 +44,44 @@ describe('countFromCollection', () => {
   });
 });
 
+describe('GITHUB_API_URL override', () => {
+  afterEach(() => {
+    delete process.env.GITHUB_API_URL;
+  });
+
+  it('targets api.github.com by default', async () => {
+    const client = fakeClient({ '/repos/a/b/pulls?': () => ({ body: [] }) });
+
+    await getOpenCounts(client, REF, 0);
+
+    expect(client.get).toHaveBeenCalledWith(
+      'https://api.github.com/repos/a/b/pulls?state=open&per_page=1',
+    );
+  });
+
+  it('targets a GitHub Enterprise host when GITHUB_API_URL is set', async () => {
+    process.env.GITHUB_API_URL = 'https://github.example.com/api/v3';
+    const client = fakeClient({ '/repos/a/b/pulls?': () => ({ body: [] }) });
+
+    await getOpenCounts(client, REF, 0);
+
+    expect(client.get).toHaveBeenCalledWith(
+      'https://github.example.com/api/v3/repos/a/b/pulls?state=open&per_page=1',
+    );
+  });
+
+  it('strips a trailing slash from GITHUB_API_URL', async () => {
+    process.env.GITHUB_API_URL = 'https://github.example.com/api/v3/';
+    const client = fakeClient({ '/repos/a/b/pulls?': () => ({ body: [] }) });
+
+    await getOpenCounts(client, REF, 0);
+
+    expect(client.get).toHaveBeenCalledWith(
+      'https://github.example.com/api/v3/repos/a/b/pulls?state=open&per_page=1',
+    );
+  });
+});
+
 describe('getOpenCounts', () => {
   // The /issues endpoint switched to cursor pagination (no rel="last"),
   // so the issue count comes from open_issues_count minus open PRs.
