@@ -76,7 +76,9 @@ function renderOverview(printer: Printer, report: Report): void {
   printer.row('URL', repo.htmlUrl);
   printer.row(
     'Visibility',
-    repo.isPrivate ? printer.paint('yellow', '🔐 private') : 'public',
+    repo.isPrivate
+      ? printer.paint('yellow', '🔐 private')
+      : printer.paint('green', '✅ public'),
   );
   if (flags.length > 0) {
     printer.row('Flags', flags.join(', '));

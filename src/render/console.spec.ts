@@ -90,7 +90,7 @@ describe('renderReport', () => {
       { ...REPORT, repo: { ...REPORT.repo, isPrivate: false } },
       { color: false },
     );
-    expect(publicOutput).toContain('public');
+    expect(publicOutput).toContain('✅ public');
     expect(publicOutput).not.toContain('🔐');
   });
 
