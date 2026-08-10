@@ -13,4 +13,3 @@ types/
 tmp/*
 !tmp/.gitkeep
 
-!.vscode/
