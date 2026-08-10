@@ -1,5 +1,6 @@
 import { createHttpClient, HttpError, RateLimitError } from './api/http';
 import { collectStats } from './collect';
+import { loadDotEnv } from './env';
 import { CliOptions, parseCliArgs, UsageError } from './parse-args';
 import { renderReport } from './render/console';
 import { buildJsonPayload } from './render/json';
@@ -36,6 +37,8 @@ async function printReport(options: CliOptions): Promise<void> {
 }
 
 export async function run(argv: string[]): Promise<number> {
+  loadDotEnv();
+
   let options;
   try {
     options = parseCliArgs(argv);

@@ -43,6 +43,16 @@ Without a token the tool uses the anonymous GitHub API limit (60 requests/hour).
 GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
 ```
 
+Alternatively, put the token in a `.env` file in the current working directory (see `.env.example`):
+
+```bash
+cp .env.example .env
+# edit .env and set GITHUB_TOKEN
+node bin/cli.js <owner>/<repo>
+```
+
+Variables already present in the shell environment take precedence over the `.env` file.
+
 > [!NOTE]
 >
 > The traffic section requires push access to the repository — GitHub exposes views and clones only to maintainers, and only for the last 14 days.
