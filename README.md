@@ -53,6 +53,27 @@ node bin/cli.js <owner>/<repo>
 
 Variables already present in the shell environment take precedence over the `.env` file.
 
+### Required token permissions
+
+Fine-grained tokens (the default on the linked page) start with the mandatory `Metadata: Read-only` permission only. Each report section needs the following access:
+
+| Report section | Fine-grained permission | Classic token scope |
+| --- | --- | --- |
+| Overview, Popularity, Activity, Timeline | `Metadata: Read-only` | none (`repo` for private) |
+| Issues / Pull requests | `Pull requests: Read-only` | none (`repo` for private) |
+| Releases | `Contents: Read-only` | none (`repo` for private) |
+| Traffic | `Administration: Read-only` | `repo` |
+
+> [!WARNING]
+>
+> A fine-grained token without these permissions responds with `403 Resource not accessible by personal access token` — the affected sections show an error while the rest of the report still renders.
+
+If you use the [GitHub CLI](https://cli.github.com), the quickest option is reusing its token, which already has the `repo` scope:
+
+```bash
+GITHUB_TOKEN=$(gh auth token) node bin/cli.js <owner>/<repo>
+```
+
 ## GitHub Enterprise
 
 Set the `GITHUB_API_URL` environment variable (or put it in `.env`) to point the tool at a GitHub Enterprise instance:
