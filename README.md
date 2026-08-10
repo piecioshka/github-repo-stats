@@ -43,9 +43,13 @@ Without a token the tool uses the anonymous GitHub API limit (60 requests/hour).
 GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
 ```
 
-> [!NOTE] The traffic section requires push access to the repository — GitHub exposes views and clones only to maintainers, and only for the last 14 days.
+> [!NOTE]
+>
+> The traffic section requires push access to the repository — GitHub exposes views and clones only to maintainers, and only for the last 14 days.
 
-> [!TIP] The token is read exclusively from the environment. There is no `--token` flag on purpose: command-line arguments end up in the shell history.
+> [!TIP]
+>
+> The token is read exclusively from the environment. There is no `--token` flag on purpose: command-line arguments end up in the shell history.
 
 ## How it works
 
