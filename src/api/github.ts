@@ -27,6 +27,7 @@ export interface RepoInfo {
   stars: number;
   forks: number;
   watchers: number;
+  openIssuesAndPulls: number;
 }
 
 export interface FirstCommit {
@@ -112,6 +113,7 @@ interface RawRepo {
   stargazers_count: number;
   forks_count: number;
   subscribers_count: number;
+  open_issues_count: number;
 }
 
 export async function getRepo(
@@ -136,26 +138,23 @@ export async function getRepo(
     stars: raw.stargazers_count,
     forks: raw.forks_count,
     watchers: raw.subscribers_count,
+    openIssuesAndPulls: raw.open_issues_count,
   };
 }
 
+/**
+ * The /issues endpoint uses cursor pagination (no rel="last"), so the issue
+ * count comes from the repository's `open_issues_count` (which includes pull
+ * requests) minus the open PR count read from the /pulls Link header.
+ */
 export async function getOpenCounts(
   client: HttpClient,
   ref: RepoRef,
+  openIssuesAndPulls: number,
 ): Promise<{ openIssues: number; openPulls: number }> {
-  const [issues, pulls] = await Promise.all([
-    client.get(repoUrl(ref, '/issues?state=open&per_page=1')),
-    client.get(repoUrl(ref, '/pulls?state=open&per_page=1')),
-  ]);
-
-  const issuesAndPulls = countFromCollection(
-    issues.headers,
-    issues.body as unknown[],
-  );
+  const pulls = await client.get(repoUrl(ref, '/pulls?state=open&per_page=1'));
   const openPulls = countFromCollection(pulls.headers, pulls.body as unknown[]);
-
-  // The /issues endpoint counts pull requests too — subtract them.
-  return { openIssues: issuesAndPulls - openPulls, openPulls };
+  return { openIssues: Math.max(0, openIssuesAndPulls - openPulls), openPulls };
 }
 
 export async function getReleases(
@@ -328,9 +327,13 @@ export async function getTraffic(
       }>,
     };
   } catch (error) {
-    // Traffic requires push access — a 403 here means "not yours", not
-    // "request failed". Rate-limit 403s never reach this point: the HTTP
-    // client turns them into RateLimitError.
+    // Traffic requires authentication (401 without a token) and push access
+    // (403 with a foreign token) — both mean "not yours", not "request
+    // failed". Rate-limit 403s never reach this point: the HTTP client turns
+    // them into RateLimitError.
+    if (error instanceof HttpError && error.status === 401) {
+      return { available: false, reason: 'requires authentication' };
+    }
     if (error instanceof HttpError && error.status === 403) {
       return { available: false, reason: 'requires push access' };
     }

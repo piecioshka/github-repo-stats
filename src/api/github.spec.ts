@@ -45,21 +45,31 @@ describe('countFromCollection', () => {
 });
 
 describe('getOpenCounts', () => {
-  it('subtracts pull requests from the issues counter', async () => {
+  // The /issues endpoint switched to cursor pagination (no rel="last"),
+  // so the issue count comes from open_issues_count minus open PRs.
+  it('subtracts pull requests from the repository issue counter', async () => {
     const client = fakeClient({
-      '/issues?': () => ({
-        body: [{}],
-        headers: new Headers({ link: '<https://x?page=10>; rel="last"' }),
-      }),
       '/pulls?': () => ({
         body: [{}],
         headers: new Headers({ link: '<https://x?page=4>; rel="last"' }),
       }),
     });
 
-    const counts = await getOpenCounts(client, REF);
+    const counts = await getOpenCounts(client, REF, 10);
     expect(counts.openPulls).toEqual(4);
     expect(counts.openIssues).toEqual(6);
+  });
+
+  it('never reports negative issues when counters are inconsistent', async () => {
+    const client = fakeClient({
+      '/pulls?': () => ({
+        body: [{}],
+        headers: new Headers({ link: '<https://x?page=4>; rel="last"' }),
+      }),
+    });
+
+    const counts = await getOpenCounts(client, REF, 2);
+    expect(counts.openIssues).toEqual(0);
   });
 });
 
@@ -252,6 +262,17 @@ describe('getTraffic', () => {
     const client: HttpClient = {
       get: vi.fn(async (url: string) => {
         throw new HttpError(403, url, 'Must have push access to repository');
+      }),
+    };
+
+    const traffic = await getTraffic(client, REF);
+    expect(traffic.available).toEqual(false);
+  });
+
+  it('reports unavailability on 401 when running without a token', async () => {
+    const client: HttpClient = {
+      get: vi.fn(async (url: string) => {
+        throw new HttpError(401, url, 'Requires authentication');
       }),
     };
 

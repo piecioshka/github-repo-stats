@@ -53,7 +53,7 @@ GITHUB_TOKEN=ghp_xxx node bin/cli.js <owner>/<repo>
 
 ## How it works
 
-- Open issue and PR counts are read from the `Link` pagination header with `per_page=1` — no Search API, no listing thousands of items. The `/issues` endpoint includes pull requests, so the tool subtracts them.
+- The open PR count is read from the `Link` pagination header of `/pulls?per_page=1` — no Search API, no listing thousands of items. The open issue count is the repository's `open_issues_count` (which includes pull requests) minus that PR count.
 - The first commit is found with two requests: the `Link` header points at the last page of `/commits?per_page=1`, which holds the oldest commit.
 - The HTTP client waits out GitHub's secondary rate limit (detected by response body, not headers), retries transient failures, and reports the reset time when the primary limit is exhausted.
 

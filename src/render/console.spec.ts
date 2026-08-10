@@ -20,6 +20,7 @@ const REPORT: Report = {
     stars: 10,
     forks: 2,
     watchers: 3,
+    openIssuesAndPulls: 3,
   },
   popularity: { stars: 10, forks: 2, watchers: 3 },
   activity: {

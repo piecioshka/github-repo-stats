@@ -64,7 +64,7 @@ export async function collectStats(
   const repo = await getRepo(client, ref);
 
   const settled = await Promise.allSettled([
-    getOpenCounts(client, ref),
+    getOpenCounts(client, ref, repo.openIssuesAndPulls),
     getReleases(client, ref),
     getFirstCommit(client, ref),
     getParticipationCommits(client, ref),

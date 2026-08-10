@@ -19,6 +19,7 @@ const REPO_BODY = {
   stargazers_count: 10,
   forks_count: 2,
   subscribers_count: 3,
+  open_issues_count: 0,
 };
 
 function fakeClient(overrides: Record<string, () => unknown> = {}): HttpClient {
