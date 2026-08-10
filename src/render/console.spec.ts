@@ -79,16 +79,19 @@ describe('renderReport', () => {
     expect(output).toContain('archived');
   });
 
-  it('labels a private repository next to its name', () => {
-    expect(output).toContain('a/b [private]');
+  it('shows private visibility in the Overview section', () => {
+    expect(output).toContain('Visibility');
+    expect(output).toContain('🔐 private');
+    expect(output).not.toContain('[private]');
   });
 
-  it('labels a public repository next to its name', () => {
+  it('shows public visibility in the Overview section', () => {
     const publicOutput = renderReport(
       { ...REPORT, repo: { ...REPORT.repo, isPrivate: false } },
       { color: false },
     );
-    expect(publicOutput).toContain('a/b [public]');
+    expect(publicOutput).toContain('public');
+    expect(publicOutput).not.toContain('🔐');
   });
 
   it('renders the timeline with gaps and details', () => {

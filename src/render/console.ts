@@ -51,12 +51,7 @@ function formatNumber(value: number): string {
 
 function renderHeader(printer: Printer, report: Report): void {
   const { repo } = report;
-  const visibility = repo.isPrivate
-    ? printer.paint('yellow', '[private]')
-    : printer.paint('gray', '[public]');
-  printer.line(
-    `${printer.paint(['bold', 'cyan'], repo.fullName)} ${visibility}`,
-  );
+  printer.line(printer.paint(['bold', 'cyan'], repo.fullName));
   if (repo.description) {
     printer.line(repo.description);
   }
@@ -79,6 +74,10 @@ function renderOverview(printer: Printer, report: Report): void {
 
   printer.section('Overview');
   printer.row('URL', repo.htmlUrl);
+  printer.row(
+    'Visibility',
+    repo.isPrivate ? printer.paint('yellow', '🔐 private') : 'public',
+  );
   if (flags.length > 0) {
     printer.row('Flags', flags.join(', '));
   }
