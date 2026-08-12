@@ -58,7 +58,20 @@
     "README.md",
     "!**/*.spec.*"
   ],
-  "keywords": [],
+  "keywords": [
+    "github",
+    "stats",
+    "statistics",
+    "repository",
+    "repo",
+    "cli",
+    "command-line",
+    "traffic",
+    "stars",
+    "releases",
+    "analytics",
+    "insights"
+  ],
   "main": "./dist/index.js",
   "types": "./types/index.d.ts",
   "bin": {
