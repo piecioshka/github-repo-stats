@@ -1,6 +1,13 @@
 # github-repo-stats 🔎
 
-![cli-available](https://badgen.net/static/cli/available/?icon=terminal) [![node version](https://img.shields.io/node/v/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats) [![npm version](https://badge.fury.io/js/github-repo-stats.svg)](https://badge.fury.io/js/github-repo-stats) [![downloads count](https://img.shields.io/npm/dt/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats) [![size](https://packagephobia.com/badge?p=github-repo-stats)](https://packagephobia.com/result?p=github-repo-stats) [![license](https://img.shields.io/npm/l/github-repo-stats.svg)](https://piecioshka.mit-license.org) [![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml) ![typescript](https://img.shields.io/badge/built%20with-TypeScript-3178c6.svg)
+![cli-available](https://badgen.net/static/cli/available/?icon=terminal)
+[![node version](https://img.shields.io/node/v/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats)
+[![npm version](https://badge.fury.io/js/github-repo-stats.svg)](https://badge.fury.io/js/github-repo-stats)
+[![downloads count](https://img.shields.io/npm/dt/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats)
+[![size](https://packagephobia.com/badge?p=github-repo-stats)](https://packagephobia.com/result?p=github-repo-stats)
+[![license](https://img.shields.io/npm/l/github-repo-stats.svg)](https://piecioshka.mit-license.org)
+[![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml)
+![typescript](https://img.shields.io/badge/built%20with-TypeScript-3178c6.svg)
 
 🔎 CLI to inspect GitHub repository statistics: popularity, activity, issues, releases, timeline, and traffic.
 
