@@ -1,3 +1,4 @@
+import { withCache } from './api/cache';
 import { createHttpClient, HttpError, RateLimitError } from './api/http';
 import { collectStats } from './collect';
 import { loadDotEnv } from './env';
@@ -6,10 +7,15 @@ import { CliOptions, parseCliArgs, UsageError } from './parse-args';
 import { renderReport } from './render/console';
 import { buildJsonPayload } from './render/json';
 
-const USAGE = `Usage: github-repo-stats <owner>/<repo> [--json] [--no-color]
+const USAGE = `Usage: github-repo-stats <owner>/<repo> [--json] [--no-color] [--no-cache]
 
 Reads the optional GITHUB_TOKEN environment variable to raise rate limits
-and unlock the traffic section (requires push access to the repository).`;
+and unlock the traffic section (requires push access to the repository).
+
+API responses are cached in $XDG_CACHE_HOME/github-repo-stats (falling back
+to ~/.cache/github-repo-stats) for 12 hours; set CACHE_TTL_HOURS to change
+that window (0 keeps entries forever) or pass --no-cache to skip the cache
+for a single run.`;
 
 function describeFailure(error: unknown, options: CliOptions): string {
   if (error instanceof HttpError && error.status === 404) {
@@ -22,7 +28,10 @@ function describeFailure(error: unknown, options: CliOptions): string {
 }
 
 async function printReport(options: CliOptions): Promise<void> {
-  const client = createHttpClient({ token: process.env.GITHUB_TOKEN });
+  const client = withCache(
+    createHttpClient({ token: process.env.GITHUB_TOKEN }),
+    { enabled: options.cache },
+  );
   const ref = { owner: options.owner, repo: options.repo };
   const report = await collectStats(client, ref);
   const output = options.json
