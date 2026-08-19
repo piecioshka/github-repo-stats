@@ -149,9 +149,14 @@ describe('cache', () => {
     });
 
     it('survives an unwritable cache directory', () => {
-      expect(() =>
-        writeCache(URL, result(), join('/dev/null', 'nope')),
-      ).not.toThrow();
+      // A regular file can never be a parent directory, so mkdir fails with
+      // ENOTDIR everywhere. A hard-coded /dev/null would not do: on Windows
+      // that is an ordinary relative path, which mkdir would happily create -
+      // the test would pass while testing nothing.
+      const file = join(directory, 'not-a-directory');
+      writeFileSync(file, '', 'utf8');
+
+      expect(() => writeCache(URL, result(), join(file, 'nope'))).not.toThrow();
     });
   });
 
