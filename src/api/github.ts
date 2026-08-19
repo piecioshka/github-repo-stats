@@ -217,7 +217,7 @@ function releasesUrl(ref: RepoRef, page: number): string {
 }
 
 /**
- * Fetches the first page, then the remaining pages concurrently — the page
+ * Fetches the first page, then the remaining pages concurrently - the page
  * count is known upfront from the `Link` header.
  */
 export async function getReleases(
@@ -247,7 +247,7 @@ export async function getReleases(
 }
 
 /**
- * First and latest release are picked by `created_at` — the API sort order
+ * First and latest release are picked by `created_at` - the API sort order
  * is not part of the contract.
  */
 export function summarizeReleases(releases: Release[]): ReleasesSummary | null {
@@ -321,7 +321,7 @@ export async function getFirstCommit(
 
 /**
  * Sum of commits from the last 52 weeks. GitHub computes these stats lazily
- * and responds 202 until they are ready — retry a few times, then give up
+ * and responds 202 until they are ready - retry a few times, then give up
  * gracefully.
  */
 export async function getParticipationCommits(
@@ -393,7 +393,7 @@ export async function getTraffic(
     };
   } catch (error) {
     // Traffic requires authentication (401 without a token) and push access
-    // (403 with a foreign token) — both mean "not yours", not "request
+    // (403 with a foreign token) - both mean "not yours", not "request
     // failed". Rate-limit 403s never reach this point: the HTTP client turns
     // them into RateLimitError.
     if (!(error instanceof HttpError)) {

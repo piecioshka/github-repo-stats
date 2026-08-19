@@ -68,8 +68,8 @@ function renderOverview(printer: Printer, report: Report): void {
   if (flags.length > 0) {
     printer.row('Flags', flags.join(', '));
   }
-  printer.row('Language', repo.language ?? '—');
-  printer.row('License', repo.license ?? '—');
+  printer.row('Language', repo.language ?? '-');
+  printer.row('License', repo.license ?? '-');
   printer.row('Created', formatDate(repo.createdAt));
   printer.row('Default branch', repo.defaultBranch);
   printer.row('Size', `${formatNumber(repo.sizeKb)} kB`);
@@ -133,13 +133,13 @@ function renderReleases(printer: Printer, report: Report): void {
 function renderTimeline(printer: Printer, report: Report): void {
   printer.section('Timeline');
   for (const event of report.timeline) {
-    // Pad before painting — ANSI codes would break padEnd's math.
+    // Pad before painting - ANSI codes would break padEnd's math.
     const date = printer.paint(
       'green',
       formatDate(event.date).padEnd(LABEL_WIDTH),
     );
     const detail = event.detail ? ` (${event.detail})` : '';
-    const gap = event.gap ? printer.paint('gray', ` — ${event.gap}`) : '';
+    const gap = event.gap ? printer.paint('gray', ` - ${event.gap}`) : '';
     printer.line(`  ${date} ${event.label}${detail}${gap}`);
   }
   if (report.errors.timeline) {

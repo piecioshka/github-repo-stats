@@ -2,7 +2,7 @@ import { errorMessage } from '../errors';
 
 const USER_AGENT = 'github-repo-stats';
 
-// Minimum gap between live requests — serialized calls alone can still trip
+// Minimum gap between live requests - serialized calls alone can still trip
 // GitHub's secondary rate limit.
 const THROTTLE_MS = 500;
 
@@ -22,7 +22,7 @@ function apiMessage(bodyText: string): string | null {
       return parsed.message;
     }
   } catch {
-    // Not a JSON body — nothing to extract.
+    // Not a JSON body - nothing to extract.
   }
   return null;
 }
@@ -34,7 +34,7 @@ export class HttpError extends Error {
     public readonly bodyText: string,
   ) {
     const detail = apiMessage(bodyText);
-    super(`GitHub API ${status} for ${url}${detail ? ` — ${detail}` : ''}`);
+    super(`GitHub API ${status} for ${url}${detail ? ` - ${detail}` : ''}`);
   }
 }
 
@@ -111,7 +111,7 @@ async function handleFailure(
   const bodyText = await response.text().catch(() => '');
 
   // The secondary (abuse) rate limit sometimes arrives as a plain 403
-  // with no telling headers — the only signal is in the response body.
+  // with no telling headers - the only signal is in the response body.
   if (response.status === 403 && /secondary rate limit/i.test(bodyText)) {
     if (++state.rateLimitWaits > MAX_RATE_LIMIT_WAITS) {
       throw new RateLimitError(resetDateFromHeaders(response.headers));
@@ -125,7 +125,7 @@ async function handleFailure(
 
 async function parseResult(response: Response): Promise<GetResult> {
   // Some endpoints respond 202 with an empty body while GitHub computes
-  // the data — json() would throw there.
+  // the data - json() would throw there.
   const text = await response.text();
   const body: unknown = text ? JSON.parse(text) : null;
   return { status: response.status, body, headers: response.headers };
