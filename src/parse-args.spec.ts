@@ -29,6 +29,7 @@ describe('parseCliArgs', () => {
     const options = parseCliArgs(['piecioshka/super-event-emitter']);
     expect(options.json).toEqual(false);
     expect(options.color).toEqual(true);
+    expect(options.cache).toEqual(true);
   });
 
   it('recognizes the --json flag', () => {
@@ -42,6 +43,14 @@ describe('parseCliArgs', () => {
       'piecioshka/super-event-emitter',
     ]);
     expect(options.color).toEqual(false);
+  });
+
+  it('recognizes the --no-cache flag', () => {
+    const options = parseCliArgs([
+      '--no-cache',
+      'piecioshka/super-event-emitter',
+    ]);
+    expect(options.cache).toEqual(false);
   });
 
   it('throws UsageError when the repository argument is missing', () => {

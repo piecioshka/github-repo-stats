@@ -9,6 +9,7 @@ export interface CliOptions {
   repo: string;
   json: boolean;
   color: boolean;
+  cache: boolean;
 }
 
 const REPO_PATTERN = /^([\w.-]+)\/([\w.-]+)$/;
@@ -44,6 +45,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
       options: {
         json: { type: 'boolean', default: false },
         'no-color': { type: 'boolean', default: false },
+        'no-cache': { type: 'boolean', default: false },
       },
     });
   } catch (error) {
@@ -62,5 +64,6 @@ export function parseCliArgs(argv: string[]): CliOptions {
     repo,
     json: parsed.values.json === true,
     color: parsed.values['no-color'] !== true,
+    cache: parsed.values['no-cache'] !== true,
   };
 }
