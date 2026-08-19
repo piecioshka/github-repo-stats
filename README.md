@@ -132,7 +132,7 @@ When the variable is not set, the tool talks to `https://api.github.com`.
 - The open PR count is read from the `Link` pagination header of `/pulls?per_page=1` - no Search API, no listing thousands of items. The open issue count is the repository's `open_issues_count` (which includes pull requests) minus that PR count.
 - The first commit is found with two requests: the `Link` header points at the last page of `/commits?per_page=1`, which holds the oldest commit.
 - The HTTP client waits out GitHub's secondary rate limit (detected by response body, not headers), retries transient failures, and reports the reset time when the primary limit is exhausted.
-- Successful responses are cached on disk, so a rerun (a different `--format`, a second look at the same repository) costs no API requests at all. Requests that never leave the machine cannot trip a rate limit either.
+- Successful responses are cached on disk, so a rerun (switching to `--json`, a second look at the same repository) costs no API requests at all. Requests that never leave the machine cannot trip a rate limit either.
 
 ## Caching
 

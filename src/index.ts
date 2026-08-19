@@ -12,9 +12,10 @@ const USAGE = `Usage: github-repo-stats <owner>/<repo> [--json] [--no-color] [--
 Reads the optional GITHUB_TOKEN environment variable to raise rate limits
 and unlock the traffic section (requires push access to the repository).
 
-API responses are cached in ~/.cache/github-repo-stats for 12 hours; set
-CACHE_TTL_HOURS to change that window (0 keeps entries forever) or pass
---no-cache to skip the cache for a single run.`;
+API responses are cached in $XDG_CACHE_HOME/github-repo-stats (falling back
+to ~/.cache/github-repo-stats) for 12 hours; set CACHE_TTL_HOURS to change
+that window (0 keeps entries forever) or pass --no-cache to skip the cache
+for a single run.`;
 
 function describeFailure(error: unknown, options: CliOptions): string {
   if (error instanceof HttpError && error.status === 404) {

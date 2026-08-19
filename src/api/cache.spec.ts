@@ -140,6 +140,30 @@ describe('cache', () => {
       expect(readCache(URL, directory)).toBeNull();
     });
 
+    it('treats valid JSON that is not an entry as a missing one', () => {
+      // "null" parses fine, and reading .savedAt off it used to throw.
+      for (const content of ['null', '42', '"text"', '[]', '{"status":"ok"}']) {
+        writeCache(URL, result(), directory);
+        const [file] = readdirSync(directory);
+        writeFileSync(join(directory, file), content, 'utf8');
+
+        expect(readCache(URL, directory)).toBeNull();
+      }
+    });
+
+    it('drops header values that are not strings', () => {
+      writeCache(URL, result(), directory);
+      const [file] = readdirSync(directory);
+      const entry = JSON.parse(readFileSync(join(directory, file), 'utf8'));
+      entry.headers = { etag: 'W/"abc"', weird: { nested: true } };
+      writeFileSync(join(directory, file), JSON.stringify(entry), 'utf8');
+
+      const cached = readCache(URL, directory);
+
+      expect(cached?.headers.get('etag')).toBe('W/"abc"');
+      expect(cached?.headers.get('weird')).toBeNull();
+    });
+
     it('treats a corrupted entry as a missing one', () => {
       writeCache(URL, result(), directory);
       const [file] = readdirSync(directory);

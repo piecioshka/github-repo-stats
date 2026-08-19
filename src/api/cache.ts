@@ -73,28 +73,67 @@ function isExpired(savedAt: unknown): boolean {
   return Date.now() - savedAt > ttlHours * 60 * 60 * 1000;
 }
 
+/**
+ * Rebuilds a response from a parsed entry, or returns null when the file held
+ * something that is not one. A cache file is not trusted input: valid JSON
+ * that is not an entry - "null", "42", an array - must not reach a field
+ * access, which on null would throw and take the report down.
+ */
+function toGetResult(parsed: unknown): GetResult | null {
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return null;
+  }
+
+  if (!('status' in parsed) || typeof parsed.status !== 'number') {
+    return null;
+  }
+
+  if (!('savedAt' in parsed) || isExpired(parsed.savedAt)) {
+    return null;
+  }
+
+  return {
+    status: parsed.status,
+    body: 'body' in parsed ? parsed.body : null,
+    headers: toHeaders(parsed),
+  };
+}
+
+/** Header values that are not strings are dropped rather than coerced. */
+function toHeaders(parsed: object): Headers {
+  const headers = new Headers();
+
+  if (
+    !('headers' in parsed) ||
+    parsed.headers === null ||
+    typeof parsed.headers !== 'object'
+  ) {
+    return headers;
+  }
+
+  for (const [name, value] of Object.entries(parsed.headers)) {
+    if (typeof value === 'string') {
+      headers.append(name, value);
+    }
+  }
+
+  return headers;
+}
+
 export function readCache(
   url: string,
   directory: string = resolveCacheDir(),
 ): GetResult | null {
-  let entry: CacheEntry;
+  let parsed: unknown;
 
   try {
-    entry = JSON.parse(readFileSync(entryPath(url, directory), 'utf8'));
+    parsed = JSON.parse(readFileSync(entryPath(url, directory), 'utf8'));
   } catch {
     // A missing or corrupted entry is treated as no entry at all.
     return null;
   }
 
-  if (isExpired(entry.savedAt)) {
-    return null;
-  }
-
-  return {
-    status: entry.status,
-    body: entry.body,
-    headers: new Headers(entry.headers ?? {}),
-  };
+  return toGetResult(parsed);
 }
 
 export function writeCache(
