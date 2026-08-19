@@ -160,6 +160,16 @@ A `202` response is never cached - GitHub returns it with an empty body while it
 | [star-history.com](https://www.star-history.com) | Star count over time as a chart | Stars only, hosted web service |
 | [git-quick-stats](https://github.com/git-quick-stats/git-quick-stats) | Statistics from a local clone: authors, commits per day, per branch | Reads git history offline, so it knows nothing about stars, issues, releases, or traffic |
 
+## Related tools
+
+| Tool | What it does | How it differs |
+| --- | --- | --- |
+| [GitHub Insights](https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository) (web UI) | Traffic, contributors, commit activity for a single repository | Browser only, one page per metric, nothing to pipe into a script |
+| [`gh` CLI](https://cli.github.com) | Official CLI: `gh repo view`, `gh api <endpoint>` | Gives you raw endpoints; the derived values (issues without PRs, first commit, timeline gaps) are yours to assemble |
+| [jgehrcke/github-repo-stats](https://github.com/jgehrcke/github-repo-stats) | GitHub Action that snapshots traffic data into a repository and renders HTML/PDF reports | Runs in CI and keeps history past GitHub's 14-day traffic window; this project is a one-shot snapshot from your terminal (same name, unrelated codebase) |
+| [star-history.com](https://www.star-history.com) | Star count over time as a chart | Stars only, hosted web service |
+| [git-quick-stats](https://github.com/git-quick-stats/git-quick-stats) | Statistics from a local clone: authors, commits per day, per branch | Reads git history offline, so it knows nothing about stars, issues, releases, or traffic |
+
 ## Development
 
 ```bash
