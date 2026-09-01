@@ -8,7 +8,7 @@
 [![downloads count](https://img.shields.io/npm/dt/github-repo-stats.svg)](https://www.npmjs.com/package/github-repo-stats)
 [![size](https://packagephobia.com/badge?p=github-repo-stats)](https://packagephobia.com/result?p=github-repo-stats)
 [![license](https://img.shields.io/npm/l/github-repo-stats.svg)](https://piecioshka.mit-license.org)
-[![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/testing.yml)
+[![github-ci](https://github.com/piecioshka/github-repo-stats/actions/workflows/ci.yml/badge.svg)](https://github.com/piecioshka/github-repo-stats/actions/workflows/ci.yml)
 ![typescript](https://img.shields.io/badge/built%20with-TypeScript-3178c6.svg)
 
 <!-- prettier-ignore-end -->
