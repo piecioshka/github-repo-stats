@@ -11,5 +11,5 @@ dist/
 types/
 
 tmp/*
-!tmp/.gitkeep
+tmp/
 
