@@ -24,23 +24,23 @@
     "pre-commit": "lint-staged"
   },
   "devDependencies": {
-    "@types/node": "^25.0.6",
-    "@typescript-eslint/eslint-plugin": "^8.46.4",
-    "@typescript-eslint/parser": "^8.46.4",
-    "@vitest/coverage-v8": "^4.1.10",
-    "eslint": "^8.57.0",
+    "@types/node": "^25.9.9",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "@vitest/coverage-v8": "^4.1.12",
+    "eslint": "^8.57.1",
     "eslint-config-piecioshka": "^3.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsdoc": "^64.0.2",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-jsdoc": "^64.5.4",
+    "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-smells": "^1.0.1",
     "eslint-plugin-todo-with-label": "^3.0.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.3.0",
-    "prettier": "^3.7.4",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.12"
   },
   "repository": {
     "type": "git",
