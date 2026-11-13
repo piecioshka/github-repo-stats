@@ -19,7 +19,7 @@
 
 ## Preview 🎉
 
-![github-repo-stats demo](demo/demo.gif)
+![github-repo-stats demo](docs/demo.gif)
 
 ## Why this exists
 

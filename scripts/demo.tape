@@ -1,4 +1,4 @@
-Output demo/demo.gif
+Output docs/demo.gif
 
 Set Shell "bash"
 Set FontSize 15
